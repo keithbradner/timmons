@@ -240,17 +240,16 @@
         <!-- Intro Panel -->
         <div id="panel-intro" class="panel">
             <h1>The Art of Control</h1>
-            <p><strong>Dever Timmons (1892–1962)</strong> was a Pictorialist who rejected the mechanical nature of photography. He didn't just take pictures; he made them.</p>
-            <p><strong>Note:</strong> Orthochromatic film is highly sensitive. Standard development requires near-total darkness; even bright red light can fog the film. You will see the room dim significantly during development to simulate this necessity.</p>
-            <p>While others worked blindly, Timmons used a chemical desensitizer and a <strong>dim green safe-light</strong> to watch his images appear, stopping at the moment of perfection.</p>
+            <p><strong>Dever Timmons</strong> was known for refusing "set-and-forget" processing. In the 1930s he adopted a German inspection method: a <strong>desensitizing bath</strong>, then <strong>inspection during development</strong> under a specially designed safelight, stopping each negative at the exact moment it reached the right contrast.</p>
+            <p><strong>Note:</strong> Most camera films of the period were <strong>panchromatic</strong>, meaning they must be handled in <strong>total darkness</strong>. The room will dim to near-black during development. When you "inspect," a <strong>very dim green/yellow-green inspection safelight</strong> appears briefly—just long enough to judge the negative.</p>
             <button onclick="startGame()">Enter The Darkroom</button>
         </div>
 
         <!-- Phase 1 Intro -->
         <div id="panel-phase1" class="panel hidden">
             <h1>Phase 1: The Machine Method</h1>
-            <p>Commercial processing relies on statistics, not art. Film is loaded into a tank in darkness. A timer is set. The photographer crosses their fingers.</p>
-            <p>We will simulate this by processing a batch of 5 photos simultaneously. You will have <strong>zero control</strong> over the outcome.</p>
+            <p>Commercial processing relies on standard time-and-temperature routines. Sheet film is lowered into tanks (or trays) on a schedule, agitated the same way, and pulled when the timer says so.</p>
+            <p>We will process a batch of 5 images on one fixed timetable. You will have <strong>zero control</strong> over individual outcomes.</p>
             <button onclick="preparePhase1()">Load Commercial Tank</button>
         </div>
         
@@ -263,8 +262,8 @@
             <button id="p2-start-btn" class="action-btn hidden" onclick="triggerP2Start()">START PROCESS</button>
             <button id="p2-inspect-btn" class="action-btn btn-inspect hidden" onclick="triggerP2Inspect()">LIFT & INSPECT</button>
             
-            <button id="p2-resume-btn" class="action-btn btn-resume hidden" onclick="triggerP2Resume()">RETURN TO TRAY (TOO PALE)</button>
-            <button id="p2-finish-btn" class="action-btn btn-finish hidden" onclick="triggerP2Finish()">STOP BATH (PERFECT)</button>
+            <button id="p2-resume-btn" class="action-btn btn-resume hidden" onclick="triggerP2Resume()">RETURN TO TRAY</button>
+            <button id="p2-finish-btn" class="action-btn btn-finish hidden" onclick="triggerP2Finish()">STOP BATH</button>
         </div>
 
         <!-- Phase 1 Results -->
@@ -284,9 +283,10 @@
         <div id="panel-phase2" class="panel hidden">
             <h1>Phase 2: The Artist's Eye</h1>
             <p>We will now process photos individually using Timmons' technique.</p>
-            <p><strong>1. Desensitize (Top Tray):</strong> Dip film in <em>Pinakryptol Green</em>. This reduces the film's light sensitivity, allowing us to use a brighter safe-light later.<br>
-            <strong>2. Develop (Bottom Tray):</strong> Submerge in developer under Red Light.<br>
-            <strong>3. Inspect:</strong> Lift the film to the <strong>Green Safe-light</strong> to judge density. Stop only when it's perfect.</p>
+            <p><strong>1. Desensitize (Forebath):</strong> Dip the sheet in <em>Pinakryptol Green</em> in darkness. This reduces sensitivity so the negative can be checked under a special inspection safelight.</p>
+            <p><strong>2. Develop (Dark):</strong> Transfer to the developer tray in near-total darkness.</p>
+            <p><strong>3. Inspect (10 seconds):</strong> Briefly lift the sheet to a <strong>dim yellow-green / dark-green safelight</strong> to judge highlight density. Return it to the developer if it's too pale.</p>
+            <p><strong>4. Stop & Secure:</strong> When it's right, dunk it in a <strong>short stop bath</strong>. In a real darkroom it would then go to <strong>fixer</strong> and wash.</p>
             <button onclick="startPhase2()">Begin Inspection</button>
         </div>
 
@@ -347,7 +347,7 @@
         scene.add(ambientLight);
 
         // Main Spot (Safelight)
-        const spotLight = new THREE.SpotLight(0xff0000, 4);
+        const spotLight = new THREE.SpotLight(0xffffff, 4);
         spotLight.position.set(0, 35, 0); 
         spotLight.angle = Math.PI / 2.5;
         spotLight.penumbra = 0.5;
@@ -361,7 +361,7 @@
         const lampCone = new THREE.Mesh(new THREE.ConeGeometry(2, 4, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.DoubleSide, metalness: 0.8 }));
         lampCone.position.y = 25;
         lampGroup.add(lampCone);
-        const bulbMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), bulbMat);
         bulb.position.y = 24;
         lampGroup.add(bulb);
@@ -420,11 +420,11 @@
             const text = `${min < 10 ? '0'+min : min}:${sec < 10 ? '0'+sec : sec}`;
 
             timerCtx.font = 'bold 80px "Roboto Mono", monospace';
-            // Use lighter red to ensure visibility in dim light
-            timerCtx.fillStyle = '#f55'; 
+            // Use amber/orange for classic darkroom timer look
+            timerCtx.fillStyle = '#ffaa55';
             timerCtx.textAlign = 'center';
             timerCtx.textBaseline = 'middle';
-            timerCtx.shadowColor = "#f00";
+            timerCtx.shadowColor = "#ff8800";
             timerCtx.shadowBlur = 15;
             timerCtx.fillText(text, 128, 64);
             
@@ -516,25 +516,36 @@
         const sheets = [];
         const paperW = 5;
         const paperH = 6;
-        
+
+        // Photo data with different exposure characteristics
+        // devRate: how fast it develops (higher = faster)
+        // idealTime: target inspectionValue for perfect exposure (1.0 = normal)
+        const photoData = [
+            { src: 'images/photo1.jpg', devRate: 0.0006, idealTime: 1.0 },  // Normal exposure
+            { src: 'images/photo2.jpg', devRate: 0.0012, idealTime: 0.85 }, // Overexposed - develops fast, stop early
+            { src: 'images/photo3.jpg', devRate: 0.0004, idealTime: 1.15 }, // Underexposed - develops slow, needs more time
+            { src: 'images/photo4.jpg', devRate: 0.0010, idealTime: 0.9 },  // Slightly overexposed
+            { src: 'images/photo5.jpg', devRate: 0.0005, idealTime: 1.1 }   // Slightly underexposed
+        ];
+
         for (let i = 0; i < 5; i++) {
             const sheetGroup = new THREE.Group();
-            
+
             const paperGeo = new THREE.BoxGeometry(paperW, 0.02, paperH);
             const paperMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.9 });
             const paper = new THREE.Mesh(paperGeo, paperMat);
             paper.castShadow = true;
             sheetGroup.add(paper);
-            
-            const tex = loader.load(`https://picsum.photos/600/800?random=${i+50}`);
+
+            const tex = loader.load(photoData[i].src);
             tex.encoding = THREE.sRGBEncoding;
-            const photoMat = new THREE.MeshBasicMaterial({ 
-                map: tex, 
-                transparent: true, 
-                opacity: 0, 
+            const photoMat = new THREE.MeshBasicMaterial({
+                map: tex,
+                transparent: true,
+                opacity: 0,
                 color: 0xffffff,
                 polygonOffset: true,
-                polygonOffsetFactor: -2 
+                polygonOffsetFactor: -2
             });
             const photoGeo = new THREE.PlaneGeometry(paperW - 0.2, paperH - 0.2);
             const photo = new THREE.Mesh(photoGeo, photoMat);
@@ -547,9 +558,11 @@
                 photoMat: photoMat,
                 targetPos: new THREE.Vector3((Math.random()-0.5)*0.5, 5 - (i*0.1), -20),
                 targetRot: new THREE.Vector3(0, 0, 0),
-                developed: 0
+                developed: 0,
+                devRate: photoData[i].devRate,
+                idealTime: photoData[i].idealTime
             };
-            
+
             sheetGroup.position.copy(sheetObj.targetPos);
             sheets.push(sheetObj);
             scene.add(sheetGroup);
@@ -560,7 +573,7 @@
         let phase = 'IDLE'; 
         let currentSheetIndex = 0;
         let inspectionValue = 0;
-        let lightTargetColor = new THREE.Color(1, 0.05, 0.05); // Default Red
+        let lightTargetColor = new THREE.Color(1, 1, 1); // Default White
         let waterDisturbance = 0;
 
         function animate() {
@@ -612,9 +625,9 @@
             if (phase === 'P2_DEVELOPING') {
                 const s = sheets[currentSheetIndex];
                 if (s) {
-                    inspectionValue += 0.0008; 
-                    s.photoMat.opacity = 0.08; 
-                    s.photoMat.color.setHex(0x1a0000); 
+                    inspectionValue += s.devRate; // Use per-sheet development rate
+                    s.photoMat.opacity = 0.08;
+                    s.photoMat.color.setHex(0x1a0000);
                 }
             } else if (phase === 'P2_INSPECTING') {
                 const s = sheets[currentSheetIndex];
@@ -656,7 +669,7 @@
             document.getElementById('panel-intro').classList.add('hidden');
             document.getElementById('panel-phase1').classList.remove('hidden');
             modeText.innerText = "PHASE 1: BLIND PROCESSING";
-            lightTargetColor.setRGB(1, 0.05, 0.05); 
+            lightTargetColor.setRGB(1, 1, 1); 
         }
 
         function preparePhase1() {
@@ -685,7 +698,7 @@
             updateTimerTexture(0); // Reset timer texture
             
             // Dim light for Blind Phase
-            lightTargetColor.setRGB(0.1, 0.01, 0.01);
+            lightTargetColor.setRGB(0.08, 0.08, 0.08);
 
             // Drop into Centered Tray
             // Reduce spread to 6x4 to avoid clipping
@@ -699,43 +712,31 @@
             
             waterDisturbance = 1.0; 
 
-            // Hardcoded 5s wait for blind mode logic, but use accumulatedTime for display
+            // Hardcoded 5s wait for blind mode logic, then auto-lift
             setTimeout(() => {
-                p1Btn.disabled = false;
-                p1Btn.innerText = "LIFT & REVIEW BATCH";
-                lightTargetColor.setRGB(1, 0.05, 0.05); 
+                lightTargetColor.setRGB(1, 1, 1);
                 phase = 'BLIND_DONE';
-            }, 5000);
-        }
-        
-        // Wrap original triggerPhase1Action to handle state transition
-        const origTriggerP1 = triggerPhase1Action;
-        window.triggerPhase1Action = function() {
-            if(phase === 'IDLE') {
-                origTriggerP1();
-            } else if (phase === 'BLIND_DONE') {
                 actionBar.classList.add('hidden');
-                
+
                 // Lift to Review - ZIGZAG STAGGERED LAYOUT
-                // Adjust rotation to face camera (X rotation approx -0.5 radians = 28 deg up from vertical)
                 sheets.forEach((s, i) => {
-                    const xOffset = (i % 2 === 0) ? -3.5 : 3.5; 
-                    const zOffset = -5 + (i * 3.5); 
-                    
+                    const xOffset = (i % 2 === 0) ? -3.5 : 3.5;
+                    const zOffset = -5 + (i * 3.5);
+
                     s.targetPos.set(xOffset, 4, zOffset);
-                    s.targetRot.set(-0.5, 0, (i % 2 === 0 ? -0.2 : 0.2)); 
-                    
+                    s.targetRot.set(0.5, 0, (i % 2 === 0 ? -0.2 : 0.2));
+
                     const r = Math.random();
-                    if(r < 0.3) { s.photoMat.opacity = 0.3; } 
-                    else if (r > 0.7) { s.photoMat.opacity = 1.0; s.photoMat.color.setHex(0x333333); } 
+                    if(r < 0.3) { s.photoMat.opacity = 0.3; }
+                    else if (r > 0.7) { s.photoMat.opacity = 1.0; s.photoMat.color.setHex(0x333333); }
                     else { s.photoMat.opacity = 0.8; }
                 });
 
                 setTimeout(() => {
                     document.getElementById('panel-result1').classList.remove('hidden');
                 }, 1000);
-            }
-        };
+            }, 5000);
+        }
 
         function setupPhase2() {
             document.getElementById('panel-result1').classList.add('hidden');
@@ -775,9 +776,12 @@
             modeText.innerText = "STEP 1: DESENSITIZING";
             accumulatedTime = 0;
             updateTimerTexture(0);
-            
+
+            // Dim lights before handling film
+            lightTargetColor.setRGB(0.08, 0.08, 0.08);
+
             const s = sheets[currentSheetIndex];
-            
+
             // 1. Lift
             s.targetPos.set(0, 5, -14);
             
@@ -803,8 +807,6 @@
                             
                             phase = 'P2_DEVELOPING';
                             inspectionValue = 0;
-                            // Dim Lights specifically for this phase
-                            lightTargetColor.setRGB(0.1, 0.01, 0.01);
                             
                             p2InspectBtn.classList.remove('hidden');
                         }, 700);
@@ -821,7 +823,7 @@
             const s = sheets[currentSheetIndex];
             // Lift Center (Z=0)
             s.targetPos.set(0, 8, 0);
-            s.targetRot.set(-0.5, 0, 0); // Face Camera
+            s.targetRot.set(0.5, 0, 0); // Face Camera
             
             lightTargetColor.setRGB(0.1, 0.8, 0.2);
             
@@ -841,7 +843,7 @@
             s.targetRot.set(0, 0, 0);
             
             waterDisturbance = 0.5;
-            lightTargetColor.setRGB(0.1, 0.01, 0.01); 
+            lightTargetColor.setRGB(0.08, 0.08, 0.08); 
             
             p2InspectBtn.classList.remove('hidden');
         }
@@ -852,15 +854,15 @@
             p2ResumeBtn.classList.add('hidden');
             p2FinishBtn.classList.add('hidden');
             
+            const s = sheets[currentSheetIndex];
             let score = 0;
-            const dist = Math.abs(1.0 - inspectionValue);
+            const dist = Math.abs(s.idealTime - inspectionValue);
             if (dist < 0.15) score = 100;
             else if (dist < 0.3) score = 70;
             else score = 30; 
             scoreLog.push(score);
 
             // Move to Finish Stack (Bottom Far Z=20)
-            const s = sheets[currentSheetIndex];
             s.targetPos.set((Math.random()-0.5), -2 + (currentSheetIndex*0.1), 20);
             s.targetRot.set(0, 0, 0);
             
@@ -878,7 +880,7 @@
                 p2StartBtn.innerText = `START SHEET ${currentSheetIndex+1}`;
                 p2StartBtn.classList.remove('hidden');
                 
-                lightTargetColor.setRGB(1, 0.05, 0.05); 
+                lightTargetColor.setRGB(1, 1, 1); 
             }
         }
 
@@ -886,12 +888,12 @@
             phase = 'REVIEW';
             actionBar.classList.add('hidden');
             
-            // Staggered vertical layout
+            // Staggered vertical layout - tilt towards camera
             sheets.forEach((s, i) => {
                 const xOffset = (i % 2 === 0) ? -3.5 : 3.5;
                 const zOffset = -5 + (i * 3.5);
                 s.targetPos.set(xOffset, 4, zOffset);
-                s.targetRot.set(-0.5, 0, (i%2===0 ? -0.1 : 0.1));
+                s.targetRot.set(0.5, 0, (i%2===0 ? 0.1 : -0.1));
             });
 
             const total = scoreLog.reduce((a, b) => a + b, 0);
