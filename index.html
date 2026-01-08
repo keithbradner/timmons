@@ -62,7 +62,7 @@
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-end;
         }
 
         /* Museum Placard Style */
@@ -72,7 +72,7 @@
             border-bottom: 2px solid #555;
             box-shadow: 0 20px 50px rgba(0,0,0,0.95);
             padding: 40px 30px;
-            margin: 20px auto;
+            margin: 20px auto 15vh auto;
             border-radius: 4px;
             pointer-events: auto;
             width: 85%;
@@ -161,7 +161,7 @@
         /* Action Bar for Portrait Mobile/Kiosk */
         #action-bar {
             position: absolute;
-            bottom: 40px;
+            bottom: 15%;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -314,8 +314,8 @@
 
         // Portrait Camera Setup (9:16 optimized)
         const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 36, 12); 
-        camera.lookAt(0, 0, 4); 
+        camera.position.set(3, 46, 22);
+        camera.lookAt(3, 0, 4); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -335,7 +335,7 @@
         scene.add(room);
 
         // Elongated Table
-        const tableGeo = new THREE.PlaneGeometry(30, 70);
+        const tableGeo = new THREE.PlaneGeometry(45, 70);
         const tableMat = new THREE.MeshStandardMaterial({ color: 0x2a1d15, roughness: 0.9, metalness: 0.1 });
         const table = new THREE.Mesh(tableGeo, tableMat);
         table.rotation.x = -Math.PI / 2;
@@ -348,7 +348,7 @@
 
         // Main Spot (Safelight)
         const spotLight = new THREE.SpotLight(0xffffff, 4);
-        spotLight.position.set(0, 35, 0); 
+        spotLight.position.set(3, 35, 0); 
         spotLight.angle = Math.PI / 2.5;
         spotLight.penumbra = 0.5;
         spotLight.castShadow = true;
@@ -392,11 +392,10 @@
             }
             
             const tex = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthTest: false });
+            const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
             const geo = new THREE.PlaneGeometry(10, 3);
             const mesh = new THREE.Mesh(geo, mat);
             mesh.rotation.x = -Math.PI / 2.5;
-            mesh.renderOrder = 999;
             return mesh;
         }
 
@@ -474,7 +473,7 @@
 
             if(labelText) {
                 const lbl = createLabel(labelText, chemText);
-                lbl.position.set(0, 0, -depth/2 - 2); 
+                lbl.position.set(0, -1.5, -depth/2 - 2); 
                 grp.add(lbl);
             }
 
