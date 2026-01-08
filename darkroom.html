@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Darkroom - Develop Like Dever</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div class="overlay"></div>
+    <div class="grain"></div>
+
+    <a href="/" class="global-back-btn">&larr; Back to Gallery</a>
+
+    <div id="ui-layer">
+
+        <div class="hud-top">
+            <div id="mode-indicator" class="status-text">DARKROOM EXPERIENCE</div>
+        </div>
+
+        <!-- Intro Panel -->
+        <div id="panel-intro" class="panel">
+            <h1>The Art of Control</h1>
+            <p><strong>Dever Timmons</strong> was known for refusing "set-and-forget" processing. In the 1930s he adopted a German inspection method: a <strong>desensitizing bath</strong>, then <strong>inspection during development</strong> under a specially designed safelight, stopping each negative at the exact moment it reached the right contrast.</p>
+            <p><strong>Note:</strong> Most camera films of the period were <strong>panchromatic</strong>, meaning they must be handled in <strong>total darkness</strong>. The room will dim to near-black during development. When you "inspect," a <strong>very dim green/yellow-green inspection safelight</strong> appears briefly—just long enough to judge the negative.</p>
+            <button onclick="startGame()">Enter The Darkroom</button>
+        </div>
+
+        <!-- Phase 1 Intro -->
+        <div id="panel-phase1" class="panel hidden">
+            <h1>Phase 1: The Machine Method</h1>
+            <p>Commercial processing relies on standard time-and-temperature routines. Sheet film is lowered into tanks (or trays) on a schedule, agitated the same way, and pulled when the timer says so.</p>
+            <p>We will process a batch of 5 images on one fixed timetable. You will have <strong>zero control</strong> over individual outcomes.</p>
+            <button onclick="preparePhase1()">Load Commercial Tank</button>
+        </div>
+
+        <!-- Action Bar (Shared) -->
+        <div id="action-bar" class="hidden">
+            <!-- Phase 1 Buttons -->
+            <button id="p1-drop-btn" class="action-btn" onclick="triggerPhase1Action()">SUBMERGE FILM BATCH</button>
+
+            <!-- Phase 2 Buttons -->
+            <button id="p2-start-btn" class="action-btn hidden" onclick="triggerP2Start()">START PROCESS</button>
+            <button id="p2-inspect-btn" class="action-btn btn-inspect hidden" onclick="triggerP2Inspect()">LIFT & INSPECT</button>
+
+            <button id="p2-resume-btn" class="action-btn btn-resume hidden" onclick="triggerP2Resume()">RETURN TO TRAY</button>
+            <button id="p2-finish-btn" class="action-btn btn-finish hidden" onclick="triggerP2Finish()">STOP BATH</button>
+        </div>
+
+        <!-- Phase 1 Results -->
+        <div id="panel-result1" class="panel hidden">
+            <h1>The Problem with Blindness</h1>
+            <div class="film-review-text">
+                <p>Observe the results. Because every sheet received the same time:<br><br>
+                &bull; <strong>Underexposed</strong> negatives remain thin and ghostly.<br>
+                &bull; <strong>Overexposed</strong> negatives are dense and blocked up.<br>
+                &bull; Only the "average" shots survived.</p>
+            </div>
+            <p>To create art, we must see what we are doing. We must use the <strong>Timmons Method</strong>.</p>
+            <button onclick="setupPhase2()">Setup Inspection Trays</button>
+        </div>
+
+        <!-- Phase 2 Intro -->
+        <div id="panel-phase2" class="panel hidden">
+            <h1>Phase 2: The Artist's Eye</h1>
+            <p>We will now process photos individually using Timmons' technique.</p>
+            <p><strong>1. Desensitize (Forebath):</strong> Dip the sheet in <em>Pinakryptol Green</em> in darkness. This reduces sensitivity so the negative can be checked under a special inspection safelight.</p>
+            <p><strong>2. Develop (Dark):</strong> Transfer to the developer tray in near-total darkness.</p>
+            <p><strong>3. Inspect (10 seconds):</strong> Briefly lift the sheet to a <strong>dim yellow-green / dark-green safelight</strong> to judge highlight density. Return it to the developer if it's too pale.</p>
+            <p><strong>4. Stop & Secure:</strong> When it's right, dunk it in a <strong>short stop bath</strong>. In a real darkroom it would then go to <strong>fixer</strong> and wash.</p>
+            <button onclick="startPhase2()">Begin Inspection</button>
+        </div>
+
+        <!-- Final Results -->
+        <div id="panel-final" class="panel hidden">
+            <h1>A Masterpiece Created</h1>
+            <p>By inspecting the development, you compensated for exposure errors in real-time. Shadows were preserved, and highlights were saved.</p>
+            <div class="film-review-text">
+                 <div class="stat-row"><span class="stat-label">Total Sheets</span> <span class="stat-val">5</span></div>
+                 <div class="stat-row"><span class="stat-label">Technique</span> <span class="stat-val">Visual Inspection</span></div>
+                 <div class="stat-row"><span class="stat-label">Quality Score</span> <span class="stat-val" id="final-score-val">0%</span></div>
+                 <div id="verdict-text"></div>
+            </div>
+            <br>
+            <a href="/" class="result-btn">Return to Gallery</a>
+        </div>
+
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Develop Like Dever - Exhibition</title>
+    <title>The Timmons Collection - Exhibition</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/entry.css">
 </head>
 <body>
 
-    <div id="canvas-container"></div>
     <div class="overlay"></div>
     <div class="grain"></div>
+
+    <button id="global-back-btn" class="global-back-btn hidden" onclick="handleBack()">&larr; Back</button>
 
     <div id="ui-layer">
 
@@ -18,75 +20,231 @@
             <div id="mode-indicator" class="status-text">EXHIBIT READY</div>
         </div>
 
-        <!-- Intro Panel -->
-        <div id="panel-intro" class="panel">
-            <h1>The Art of Control</h1>
-            <p><strong>Dever Timmons</strong> was known for refusing "set-and-forget" processing. In the 1930s he adopted a German inspection method: a <strong>desensitizing bath</strong>, then <strong>inspection during development</strong> under a specially designed safelight, stopping each negative at the exact moment it reached the right contrast.</p>
-            <p><strong>Note:</strong> Most camera films of the period were <strong>panchromatic</strong>, meaning they must be handled in <strong>total darkness</strong>. The room will dim to near-black during development. When you "inspect," a <strong>very dim green/yellow-green inspection safelight</strong> appears briefly—just long enough to judge the negative.</p>
-            <button onclick="startGame()">Enter The Darkroom</button>
-        </div>
-
-        <!-- Phase 1 Intro -->
-        <div id="panel-phase1" class="panel hidden">
-            <h1>Phase 1: The Machine Method</h1>
-            <p>Commercial processing relies on standard time-and-temperature routines. Sheet film is lowered into tanks (or trays) on a schedule, agitated the same way, and pulled when the timer says so.</p>
-            <p>We will process a batch of 5 images on one fixed timetable. You will have <strong>zero control</strong> over individual outcomes.</p>
-            <button onclick="preparePhase1()">Load Commercial Tank</button>
-        </div>
-
-        <!-- Action Bar (Shared) -->
-        <div id="action-bar" class="hidden">
-            <!-- Phase 1 Buttons -->
-            <button id="p1-drop-btn" class="action-btn" onclick="triggerPhase1Action()">SUBMERGE FILM BATCH</button>
-
-            <!-- Phase 2 Buttons -->
-            <button id="p2-start-btn" class="action-btn hidden" onclick="triggerP2Start()">START PROCESS</button>
-            <button id="p2-inspect-btn" class="action-btn btn-inspect hidden" onclick="triggerP2Inspect()">LIFT & INSPECT</button>
-
-            <button id="p2-resume-btn" class="action-btn btn-resume hidden" onclick="triggerP2Resume()">RETURN TO TRAY</button>
-            <button id="p2-finish-btn" class="action-btn btn-finish hidden" onclick="triggerP2Finish()">STOP BATH</button>
-        </div>
-
-        <!-- Phase 1 Results -->
-        <div id="panel-result1" class="panel hidden">
-            <h1>The Problem with Blindness</h1>
-            <div class="film-review-text">
-                <p>Observe the results. Because every sheet received the same time:<br><br>
-                • <strong>Underexposed</strong> negatives remain thin and ghostly.<br>
-                • <strong>Overexposed</strong> negatives are dense and blocked up.<br>
-                • Only the "average" shots survived.</p>
+        <!-- Entry Selection Screen -->
+        <div id="panel-entry" class="panel entry-panel">
+            <div class="entry-header">
+                <h1 class="entry-title">Coshocton Photography<br><span class="entry-subtitle">Innovation & Artistry</span></h1>
+                <p class="entry-description">Explore the intersection of technical invention and artistic mastery in early 20th century photography.</p>
             </div>
-            <p>To create art, we must see what we are doing. We must use the <strong>Timmons Method</strong>.</p>
-            <button onclick="setupPhase2()">Setup Inspection Trays</button>
-        </div>
 
-        <!-- Phase 2 Intro -->
-        <div id="panel-phase2" class="panel hidden">
-            <h1>Phase 2: The Artist's Eye</h1>
-            <p>We will now process photos individually using Timmons' technique.</p>
-            <p><strong>1. Desensitize (Forebath):</strong> Dip the sheet in <em>Pinakryptol Green</em> in darkness. This reduces sensitivity so the negative can be checked under a special inspection safelight.</p>
-            <p><strong>2. Develop (Dark):</strong> Transfer to the developer tray in near-total darkness.</p>
-            <p><strong>3. Inspect (10 seconds):</strong> Briefly lift the sheet to a <strong>dim yellow-green / dark-green safelight</strong> to judge highlight density. Return it to the developer if it's too pale.</p>
-            <p><strong>4. Stop & Secure:</strong> When it's right, dunk it in a <strong>short stop bath</strong>. In a real darkroom it would then go to <strong>fixer</strong> and wash.</p>
-            <button onclick="startPhase2()">Begin Inspection</button>
-        </div>
+            <div class="entry-options">
+                <a href="/darkroom.html" class="entry-option">
+                    <div class="option-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M3 9h18M9 21V9"/>
+                        </svg>
+                    </div>
+                    <div class="option-content">
+                        <h2>The Darkroom</h2>
+                        <p>Experience Dever Timmons' revolutionary inspection development technique</p>
+                    </div>
+                    <div class="option-arrow">&rarr;</div>
+                </a>
 
-        <!-- Final Results -->
-        <div id="panel-final" class="panel hidden">
-            <h1>A Masterpiece Created</h1>
-            <p>By inspecting the development, you compensated for exposure errors in real-time. Shadows were preserved, and highlights were saved.</p>
-            <div class="film-review-text">
-                 <div class="stat-row"><span class="stat-label">Total Sheets</span> <span class="stat-val">5</span></div>
-                 <div class="stat-row"><span class="stat-label">Technique</span> <span class="stat-val">Visual Inspection</span></div>
-                 <div class="stat-row"><span class="stat-label">Quality Score</span> <span class="stat-val" id="final-score-val">0%</span></div>
-                 <div id="verdict-text"></div>
+                <button class="entry-option" onclick="enterPatents()">
+                    <div class="option-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <div class="option-content">
+                        <h2>Patent Gallery</h2>
+                        <p>Walter B. Moore's innovations in film developing equipment</p>
+                    </div>
+                    <div class="option-arrow">&rarr;</div>
+                </button>
             </div>
-            <br>
-            <button onclick="window.location.reload()">Reset Exhibit</button>
+
+            <div class="entry-footer">
+                <span>Touch to Select</span>
+            </div>
+        </div>
+
+        <!-- Patents Gallery -->
+        <div id="panel-patents" class="panel patents-panel hidden">
+            <div class="patents-header">
+                <h1>Walter B. Moore</h1>
+                <p class="patents-subtitle">Film Developing Equipment Patents</p>
+                <p class="patents-location">Coshocton, Ohio</p>
+            </div>
+
+            <div class="patents-list">
+                <button class="patent-item" onclick="viewPatent(0)">
+                    <div class="patent-number">US 2,226,438</div>
+                    <div class="patent-title">Film-Developing Tank</div>
+                    <div class="patent-year">1940</div>
+                </button>
+
+                <button class="patent-item" onclick="viewPatent(1)">
+                    <div class="patent-number">US 2,327,733</div>
+                    <div class="patent-title">Film Developing Tank</div>
+                    <div class="patent-year">1943</div>
+                </button>
+
+                <button class="patent-item" onclick="viewPatent(2)">
+                    <div class="patent-number">US 2,365,485</div>
+                    <div class="patent-title">Film Developing Rack</div>
+                    <div class="patent-year">1944</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Patent Detail View -->
+        <div id="panel-patent-detail" class="panel patent-detail-panel hidden">
+            <div class="patent-detail-header">
+                <div class="patent-detail-badge" id="patent-detail-number">US 2,226,438</div>
+            </div>
+
+            <div class="patent-detail-content">
+                <h1 id="patent-detail-title">Patent Title</h1>
+                <div class="patent-meta">
+                    <span>Published <span id="patent-detail-year">1940</span></span>
+                    <span class="meta-separator">|</span>
+                    <span>Filed <span id="patent-detail-filed">May 28, 1938</span></span>
+                </div>
+                <div class="patent-inventor">
+                    <span>Inventor: Walter B. Moore, Coshocton, Ohio</span>
+                </div>
+
+                <div class="patent-description">
+                    <h2>Abstract</h2>
+                    <p id="patent-detail-description">Patent description will appear here.</p>
+                </div>
+
+                <div class="patent-document-section">
+                    <h2>Patent Document</h2>
+                    <div class="patent-iframe-container">
+                        <iframe id="patent-pdf-iframe" src="" title="Patent Document"></iframe>
+                    </div>
+                    <div class="patent-external-link">
+                        <a id="patent-google-link" href="#" target="_blank" rel="noopener noreferrer">
+                            Also available on Google Patents &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script>
+        // Patent data for Walter B. Moore (Coshocton, Ohio)
+        const PATENTS = [
+            {
+                number: 'US 2,226,438',
+                patentId: 'US2226438A',
+                patentNum: '2226438',
+                title: 'Film-Developing Tank',
+                year: '1940',
+                filed: 'May 28, 1938',
+                description: 'A transparent tank design allowing observation of film development progress. Features a helical screw circulation system that pumps developer from bottom to top, preventing air bubble accumulation on film surfaces. Includes spring-operated timing device and light-tight cover for use in illuminated rooms.',
+                pdfUrl: 'https://patentimages.storage.googleapis.com/e5/05/8c/5440af6ecc5388/US2226438.pdf'
+            },
+            {
+                number: 'US 2,327,733',
+                patentId: 'US2327733A',
+                patentNum: '2327733',
+                title: 'Film Developing Tank',
+                year: '1943',
+                filed: 'December 14, 1939',
+                description: 'An advanced developing unit with interconnected tanks maintaining consistent temperature via water jacket. Developer liquid flows downward through spaced inlet ports for uniform film exposure. System includes five nested tanks for washing, developing, rinsing, fixing, and final washing. Reduced developing time by 25-33%.',
+                pdfUrl: 'https://patentimages.storage.googleapis.com/92/42/9a/e61adfb4c48d64/US2327733.pdf'
+            },
+            {
+                number: 'US 2,365,485',
+                patentId: 'US2365485A',
+                patentNum: '2365485',
+                title: 'Film Developing Rack',
+                year: '1944',
+                filed: 'June 21, 1943',
+                description: 'A portable rack system for suspending roll film, film packs, and cut film in spaced arrangement during chemical processing. Features rectangular frame with notched pins and spring-latch retention. Enables quick transfer between multiple processing tanks while ensuring uniform chemical distribution.',
+                pdfUrl: 'https://patentimages.storage.googleapis.com/88/30/0a/4666bfe53b8afc/US2365485.pdf'
+            }
+        ];
+
+        const modeText = document.getElementById('mode-indicator');
+        const globalBackBtn = document.getElementById('global-back-btn');
+        const panelEntry = document.getElementById('panel-entry');
+        const panelPatents = document.getElementById('panel-patents');
+        const panelPatentDetail = document.getElementById('panel-patent-detail');
+
+        // Track current view for back button
+        let currentView = 'entry';
+
+        function updateBackButton() {
+            if (currentView === 'entry') {
+                globalBackBtn.classList.add('hidden');
+            } else {
+                globalBackBtn.classList.remove('hidden');
+            }
+        }
+
+        function handleBack() {
+            if (currentView === 'patent-detail') {
+                returnToPatents();
+            } else if (currentView === 'patents') {
+                returnToEntry();
+            }
+        }
+
+        function enterPatents() {
+            panelEntry.classList.add('hidden');
+            panelPatents.classList.remove('hidden');
+            modeText.innerText = "PATENT GALLERY";
+            currentView = 'patents';
+            updateBackButton();
+        }
+
+        function returnToEntry() {
+            panelPatents.classList.add('hidden');
+            panelPatentDetail.classList.add('hidden');
+            panelEntry.classList.remove('hidden');
+            modeText.innerText = "EXHIBIT READY";
+            currentView = 'entry';
+            updateBackButton();
+        }
+
+        function viewPatent(index) {
+            const patent = PATENTS[index];
+            if (!patent) return;
+
+            // Update detail view content
+            document.getElementById('patent-detail-number').innerText = patent.number;
+            document.getElementById('patent-detail-title').innerText = patent.title;
+            document.getElementById('patent-detail-year').innerText = patent.year;
+            document.getElementById('patent-detail-filed').innerText = patent.filed;
+            document.getElementById('patent-detail-description').innerText = patent.description;
+
+            // Set up Google Patents link
+            const googlePatentsUrl = `https://patents.google.com/patent/${patent.patentId}`;
+            document.getElementById('patent-google-link').href = googlePatentsUrl;
+
+            // Load PDF in iframe
+            document.getElementById('patent-pdf-iframe').src = patent.pdfUrl;
+
+            panelPatents.classList.add('hidden');
+            panelPatentDetail.classList.remove('hidden');
+            modeText.innerText = patent.number;
+            currentView = 'patent-detail';
+            updateBackButton();
+        }
+
+        function returnToPatents() {
+            // Clear iframe to stop loading/free resources
+            document.getElementById('patent-pdf-iframe').src = '';
+
+            panelPatentDetail.classList.add('hidden');
+            panelPatents.classList.remove('hidden');
+            modeText.innerText = "PATENT GALLERY";
+            currentView = 'patents';
+            updateBackButton();
+        }
+    </script>
 </body>
 </html>
