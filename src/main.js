@@ -123,6 +123,25 @@ function animate() {
 
 animate()
 
+// Hide loading screen once scene is ready
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen')
+    if (loadingScreen) {
+        loadingScreen.classList.add('fade-out')
+        setTimeout(() => {
+            loadingScreen.remove()
+        }, 500)
+    }
+    document.body.classList.add('loaded')
+}
+
+// Wait for first render then hide loading screen
+requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+        hideLoadingScreen()
+    })
+})
+
 // Resize handler
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight

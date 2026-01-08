@@ -21,6 +21,7 @@ export function createSheets(scene) {
         const paperMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.9 })
         const paper = new THREE.Mesh(paperGeo, paperMat)
         paper.castShadow = true
+        paper.receiveShadow = true
         sheetGroup.add(paper)
 
         const tex = loader.load(photoData[i].src)

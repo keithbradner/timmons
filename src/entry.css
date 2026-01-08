@@ -128,11 +128,10 @@ button:hover {
     z-index: 100;
 }
 
-/* Global back button - fixed upper left of screen */
+/* Global back button - fixed to screen */
 .global-back-btn {
     position: fixed;
     left: 30px;
-    top: 30px;
     padding: 12px 20px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
@@ -146,6 +145,14 @@ button:hover {
     z-index: 1000;
     cursor: pointer;
     width: auto;
+}
+
+.global-back-btn-top {
+    top: 30px;
+}
+
+.global-back-btn-bottom {
+    bottom: 30px;
 }
 
 .global-back-btn:hover {
@@ -486,6 +493,23 @@ button:hover {
     padding-bottom: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
+}
+
+.patent-back-btn {
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: auto;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.patent-back-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .patent-detail-badge {

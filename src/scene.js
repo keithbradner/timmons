@@ -55,8 +55,22 @@ export function createLights(scene) {
     spotLight.angle = Math.PI / 2.5
     spotLight.penumbra = 0.5
     spotLight.castShadow = true
-    spotLight.shadow.mapSize.width = 1024
-    spotLight.shadow.mapSize.height = 1024
+
+    // Higher resolution shadow map for sharper shadows
+    spotLight.shadow.mapSize.width = 2048
+    spotLight.shadow.mapSize.height = 2048
+
+    // Configure shadow camera for tighter bounds = better shadow quality
+    spotLight.shadow.camera.near = 10
+    spotLight.shadow.camera.far = 60
+
+    // Prevent shadow acne and peter-panning
+    spotLight.shadow.bias = -0.0005
+    spotLight.shadow.normalBias = 0.02
+
+    // Softer shadow edges
+    spotLight.shadow.radius = 2
+
     scene.add(spotLight)
 
     return { ambientLight, spotLight }

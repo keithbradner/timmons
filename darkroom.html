@@ -5,14 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Darkroom - Develop Like Dever</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Critical inline styles to prevent flash of unstyled content */
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #050505;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        #loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-text {
+            font-family: 'Roboto Mono', monospace;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        /* Hide content until CSS loads */
+        #ui-layer, .overlay, .grain, .global-back-btn {
+            visibility: hidden;
+        }
+        body.loaded #ui-layer,
+        body.loaded .overlay,
+        body.loaded .grain,
+        body.loaded .global-back-btn {
+            visibility: visible;
+        }
+    </style>
 </head>
 <body>
+
+    <div id="loading-screen">
+        <span class="loading-text">Entering Darkroom...</span>
+    </div>
 
     <div id="canvas-container"></div>
     <div class="overlay"></div>
     <div class="grain"></div>
 
-    <a href="/" class="global-back-btn">&larr; Back to Gallery</a>
+    <a href="/" class="global-back-btn global-back-btn-top">&larr; Back to Gallery</a>
+    <a href="/" class="global-back-btn global-back-btn-bottom">&larr; Back to Gallery</a>
 
     <div id="ui-layer">
 
@@ -90,5 +140,27 @@
     </div>
 
     <script type="module" src="/src/main.js"></script>
+    <script>
+        // Inactivity timeout - return to index after 10 minutes
+        const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in ms
+        let inactivityTimer = null;
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+            }
+            inactivityTimer = setTimeout(() => {
+                window.location.href = '/';
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        // Listen for user activity
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, { passive: true });
+        });
+
+        // Start the timer
+        resetInactivityTimer();
+    </script>
 </body>
 </html>

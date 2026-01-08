@@ -154,11 +154,10 @@ button:disabled:hover { background: transparent; color: #555; }
     position: relative;
 }
 
-/* Global back button - fixed upper left of screen */
+/* Global back button - fixed to screen */
 .global-back-btn {
     position: fixed;
     left: 30px;
-    top: 30px;
     padding: 12px 20px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
@@ -171,6 +170,14 @@ button:disabled:hover { background: transparent; color: #555; }
     transition: all 0.3s ease;
     z-index: 1000;
     cursor: pointer;
+}
+
+.global-back-btn-top {
+    top: 30px;
+}
+
+.global-back-btn-bottom {
+    bottom: 30px;
 }
 
 .global-back-btn:hover {

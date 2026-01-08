@@ -12,13 +12,10 @@
     <div class="overlay"></div>
     <div class="grain"></div>
 
-    <button id="global-back-btn" class="global-back-btn hidden" onclick="handleBack()">&larr; Back</button>
+    <button id="global-back-btn" class="global-back-btn global-back-btn-top hidden" onclick="handleBack()">&larr; Back</button>
+    <button id="global-back-btn-bottom" class="global-back-btn global-back-btn-bottom hidden" onclick="handleBack()">&larr; Back</button>
 
     <div id="ui-layer">
-
-        <div class="hud-top">
-            <div id="mode-indicator" class="status-text">EXHIBIT READY</div>
-        </div>
 
         <!-- Entry Selection Screen -->
         <div id="panel-entry" class="panel entry-panel">
@@ -98,6 +95,7 @@
         <!-- Patent Detail View -->
         <div id="panel-patent-detail" class="panel patent-detail-panel hidden">
             <div class="patent-detail-header">
+                <button class="patent-back-btn" onclick="returnToPatents()">&larr; Back to Patents</button>
                 <div class="patent-detail-badge" id="patent-detail-number">US 2,226,438</div>
             </div>
 
@@ -168,8 +166,8 @@
             }
         ];
 
-        const modeText = document.getElementById('mode-indicator');
         const globalBackBtn = document.getElementById('global-back-btn');
+        const globalBackBtnBottom = document.getElementById('global-back-btn-bottom');
         const panelEntry = document.getElementById('panel-entry');
         const panelPatents = document.getElementById('panel-patents');
         const panelPatentDetail = document.getElementById('panel-patent-detail');
@@ -180,8 +178,10 @@
         function updateBackButton() {
             if (currentView === 'entry') {
                 globalBackBtn.classList.add('hidden');
+                globalBackBtnBottom.classList.add('hidden');
             } else {
                 globalBackBtn.classList.remove('hidden');
+                globalBackBtnBottom.classList.remove('hidden');
             }
         }
 
@@ -196,7 +196,6 @@
         function enterPatents() {
             panelEntry.classList.add('hidden');
             panelPatents.classList.remove('hidden');
-            modeText.innerText = "PATENT GALLERY";
             currentView = 'patents';
             updateBackButton();
         }
@@ -205,7 +204,6 @@
             panelPatents.classList.add('hidden');
             panelPatentDetail.classList.add('hidden');
             panelEntry.classList.remove('hidden');
-            modeText.innerText = "EXHIBIT READY";
             currentView = 'entry';
             updateBackButton();
         }
@@ -230,7 +228,6 @@
 
             panelPatents.classList.add('hidden');
             panelPatentDetail.classList.remove('hidden');
-            modeText.innerText = patent.number;
             currentView = 'patent-detail';
             updateBackButton();
         }
@@ -241,10 +238,32 @@
 
             panelPatentDetail.classList.add('hidden');
             panelPatents.classList.remove('hidden');
-            modeText.innerText = "PATENT GALLERY";
             currentView = 'patents';
             updateBackButton();
         }
+
+        // Inactivity timeout - return to entry after 10 minutes
+        const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in ms
+        let inactivityTimer = null;
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+            }
+            inactivityTimer = setTimeout(() => {
+                if (currentView !== 'entry') {
+                    returnToEntry();
+                }
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        // Listen for user activity
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, { passive: true });
+        });
+
+        // Start the timer
+        resetInactivityTimer();
     </script>
 </body>
 </html>
