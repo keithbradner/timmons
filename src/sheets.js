@@ -2,27 +2,36 @@ import * as THREE from 'three'
 
 // Photo data with actual aspect ratios from the images
 const photoData = [
-    { src: '/images/photo1.jpg', width: 509, height: 640, devRate: 0.0012, idealTime: 1.0 },
-    { src: '/images/photo2.jpg', width: 450, height: 640, devRate: 0.0018, idealTime: 0.85 },
-    { src: '/images/photo3.jpg', width: 509, height: 640, devRate: 0.0010, idealTime: 1.1 },
-    { src: '/images/photo4.jpg', width: 461, height: 640, devRate: 0.0014, idealTime: 0.9 },
-    { src: '/images/photo5.jpg', width: 430, height: 640, devRate: 0.0011, idealTime: 1.05 }
+    { src: '/images/photo1.jpg', width: 858, height: 1024, devRate: 0.0012, idealTime: 1.0 },
+    { src: '/images/photo2.jpg', width: 797, height: 1024, devRate: 0.0014, idealTime: 1.0 },
+    { src: '/images/photo3.jpg', width: 841, height: 1024, devRate: 0.0010, idealTime: 1.0 },
+    { src: '/images/photo4.jpg', width: 1024, height: 819, devRate: 0.0013, idealTime: 1.0 },
+    { src: '/images/photo5.jpg', width: 773, height: 1024, devRate: 0.0011, idealTime: 1.0 }
 ]
 
 export function createSheets(scene) {
     const loader = new THREE.TextureLoader()
     const sheets = []
-    const baseHeight = 6 // Standard height for all sheets
+    const baseSize = 6 // Standard size for the larger dimension
     const border = 0.2 // Border around the photo
 
     for (let i = 0; i < photoData.length; i++) {
         const sheetGroup = new THREE.Group()
         const data = photoData[i]
 
-        // Calculate width based on actual aspect ratio
+        // Calculate dimensions based on actual aspect ratio
+        // Normalize by the larger dimension so all photos have similar scale
         const aspectRatio = data.width / data.height
-        const paperH = baseHeight
-        const paperW = paperH * aspectRatio
+        let paperW, paperH
+        if (aspectRatio >= 1) {
+            // Landscape: width is larger
+            paperW = baseSize
+            paperH = baseSize / aspectRatio
+        } else {
+            // Portrait: height is larger
+            paperH = baseSize
+            paperW = baseSize * aspectRatio
+        }
 
         const paperGeo = new THREE.BoxGeometry(paperW, 0.02, paperH)
         const paperMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.9 })
