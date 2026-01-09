@@ -56,7 +56,17 @@ export function setupUI(state, deps) {
         state.lightTargetColor.setRGB(0.08, 0.08, 0.08)
 
         sheets.forEach((s, i) => {
-            s.targetPos.set(0, 5 + (i * 0.2), -20)
+            let x, z
+            if (i < 3) {
+                // Top row: 3 images
+                x = (i - 1) * 4  // -4, 0, 4
+                z = -22
+            } else {
+                // Bottom row: 2 images
+                x = (i - 3.5) * 4  // -2, 2
+                z = -17
+            }
+            s.targetPos.set(x, 8, z)
             s.targetRot.set(0, 0, 0)
         })
     }
@@ -85,11 +95,19 @@ export function setupUI(state, deps) {
             actionBar.classList.add('hidden')
 
             sheets.forEach((s, i) => {
-                const xOffset = (i % 2 === 0) ? -3.5 : 3.5
-                const zOffset = -5 + (i * 3.5)
+                let xOffset, zOffset
+                if (i < 3) {
+                    // Top row: 3 images
+                    xOffset = (i - 1) * 6 + 3  // -3, 3, 9
+                    zOffset = -8
+                } else {
+                    // Bottom row: 2 images
+                    xOffset = (i - 3.5) * 6 + 3  // 0, 6
+                    zOffset = 2
+                }
 
-                s.targetPos.set(xOffset, 4, zOffset)
-                s.targetRot.set(0.5, 0, (i % 2 === 0 ? -0.2 : 0.2))
+                s.targetPos.set(xOffset, 11, zOffset)
+                s.targetRot.set(0.5, 0, (i < 3 ? (i - 1) * 0.1 : (i - 3.5) * 0.1))
 
                 const r = Math.random()
                 if (r < 0.3) { s.photoMat.opacity = 0.3 }
@@ -266,10 +284,10 @@ export function setupUI(state, deps) {
 
         for (let i = 0; i < PHASE2_SHEET_COUNT; i++) {
             const s = sheets[i]
-            const xOffset = (i % 2 === 0) ? -3.5 : 3.5
-            const zOffset = -5 + (i * 3.5)
-            s.targetPos.set(xOffset, 4, zOffset)
-            s.targetRot.set(0.5, 0, (i % 2 === 0 ? 0.1 : -0.1))
+            // Single row of 3 images
+            const xOffset = (i - 1) * 6 + 3  // 3 images at -3, 3, 9
+            s.targetPos.set(xOffset, 7, -2)
+            s.targetRot.set(0.5, 0, (i - 1) * 0.1)
         }
 
         const total = state.scoreLog.reduce((a, b) => a + b, 0)
