@@ -1,3 +1,5 @@
+import { initPdfViewer, loadPdf, closePdf } from './pdf-viewer.js'
+
 const PATENTS = [
     {
         number: 'US 2,226,438',
@@ -84,6 +86,7 @@ export function initPatents() {
     panelEntry = document.getElementById('panel-entry')
     panelPatents = document.getElementById('panel-patents')
     panelPatentDetail = document.getElementById('panel-patent-detail')
+    initPdfViewer()
 }
 
 export function getCurrentView() {
@@ -138,7 +141,7 @@ export function viewPatent(index) {
         googleLink.href = `https://patents.google.com/patent/${patent.patentId}`
     }
 
-    document.getElementById('patent-pdf-iframe').src = patent.pdfUrl
+    loadPdf(patent.pdfUrl)
 
     panelPatents.classList.add('hidden')
     panelPatentDetail.classList.remove('hidden')
@@ -147,7 +150,7 @@ export function viewPatent(index) {
 }
 
 export function returnToPatents() {
-    document.getElementById('patent-pdf-iframe').src = ''
+    closePdf()
 
     panelPatentDetail.classList.add('hidden')
     panelPatents.classList.remove('hidden')

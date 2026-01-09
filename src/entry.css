@@ -481,9 +481,11 @@ button:hover {
     width: 1000px;
     height: 85vh;
     max-height: 85vh;
-    overflow-y: auto;
+    overflow: hidden;
     background: linear-gradient(180deg, rgba(15, 15, 15, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
 }
 
 .patent-detail-header {
@@ -524,12 +526,20 @@ button:hover {
     margin-left: auto;
 }
 
+.patent-detail-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .patent-detail-content h1 {
     font-size: 2rem;
     margin: 0 0 15px 0;
     text-transform: none;
     font-weight: 400;
     line-height: 1.3;
+    flex-shrink: 0;
 }
 
 .patent-meta {
@@ -540,6 +550,7 @@ button:hover {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.85);
+    flex-shrink: 0;
 }
 
 .meta-separator {
@@ -557,6 +568,7 @@ button:hover {
 
 .patent-description {
     margin-bottom: 30px;
+    flex-shrink: 0;
 }
 
 .patent-description h2 {
@@ -579,6 +591,10 @@ button:hover {
 /* Patent Document Section */
 .patent-document-section {
     margin-top: 25px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .patent-document-section h2 {
@@ -588,22 +604,70 @@ button:hover {
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.8);
     margin: 0 0 15px 0;
+    flex-shrink: 0;
 }
 
-.patent-iframe-container {
+.pdf-viewer-container {
     width: 100%;
+    flex: 1;
     background: #111;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-.patent-iframe-container iframe {
+.pdf-pages-container {
     width: 100%;
-    height: calc(85vh - 280px);
-    min-height: 500px;
-    border: none;
-    display: block;
+    flex: 1;
+    overflow-y: scroll !important;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: #1a1a1a;
+    scrollbar-width: auto;
+    scrollbar-color: rgba(255, 255, 255, 0.5) #111;
+    scrollbar-gutter: stable;
+    box-sizing: border-box;
+}
+
+.pdf-pages-container::-webkit-scrollbar {
+    width: 14px;
+    display: block !important;
+}
+
+.pdf-pages-container::-webkit-scrollbar-track {
+    background: #222;
+}
+
+.pdf-pages-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 7px;
+    border: 2px solid #222;
+}
+
+.pdf-pages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.pdf-pages-container .pdf-page {
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.pdf-loading,
+.pdf-error {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 40px;
+    text-align: center;
 }
 
 .patent-external-link {
@@ -624,8 +688,8 @@ button:hover {
 }
 
 @media (max-width: 700px) {
-    .patent-iframe-container iframe {
-        height: 500px;
+    .pdf-pages-container {
+        min-height: 350px;
     }
 }
 

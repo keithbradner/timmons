@@ -6,6 +6,7 @@
     <title>The Timmons Collection - Exhibition</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/entry.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 
@@ -118,7 +119,6 @@
         <!-- Patent Detail View -->
         <div id="panel-patent-detail" class="panel patent-detail-panel hidden">
             <div class="patent-detail-header">
-                <button class="patent-back-btn" onclick="returnToPatents()">&larr; Back to Patents</button>
                 <div class="patent-detail-badge" id="patent-detail-number">US 2,226,438</div>
             </div>
 
@@ -137,8 +137,8 @@
 
                 <div class="patent-document-section">
                     <h2>Patent Document</h2>
-                    <div class="patent-iframe-container">
-                        <iframe id="patent-pdf-iframe" src="" title="Patent Document"></iframe>
+                    <div class="pdf-viewer-container">
+                        <div id="pdf-pages-container" class="pdf-pages-container"></div>
                     </div>
                 </div>
             </div>
