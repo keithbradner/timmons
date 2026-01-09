@@ -106,7 +106,7 @@ p {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
     line-height: 1.6;
-    color: #bbb;
+    color: #eee;
     margin-bottom: 30px;
     text-align: left;
 }
@@ -162,9 +162,9 @@ button:disabled:hover { background: transparent; color: #555; }
     padding: 12px 20px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     text-decoration: none;
     letter-spacing: 1px;
@@ -190,13 +190,13 @@ button:disabled:hover { background: transparent; color: #555; }
 .status-text {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
-    color: #888;
+    color: #ddd;
     letter-spacing: 3px;
     text-transform: uppercase;
     background: rgba(0,0,0,0.8);
     padding: 8px 16px;
     border-radius: 20px;
-    border: 1px solid #333;
+    border: 1px solid #444;
 }
 
 /* Legacy timer display hidden in favor of 3D timer */
@@ -243,7 +243,7 @@ button:disabled:hover { background: transparent; color: #555; }
 .film-review-text {
     text-align: left;
     font-size: 0.95rem;
-    color: #ccc;
+    color: #eee;
     margin-top: 20px;
     border-top: 1px solid #444;
     padding-top: 20px;
@@ -257,7 +257,7 @@ button:disabled:hover { background: transparent; color: #555; }
     padding-bottom: 4px;
 }
 
-.stat-label { color: #888; text-transform: uppercase; font-size: 0.8rem; }
+.stat-label { color: #ccc; text-transform: uppercase; font-size: 0.8rem; }
 .stat-val { color: #fff; font-weight: bold; }
 
 #verdict-text {
@@ -321,7 +321,7 @@ button:disabled:hover { background: transparent; color: #555; }
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
     letter-spacing: 4px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin-bottom: 25px;
     text-transform: uppercase;
 }
@@ -338,13 +338,13 @@ button:disabled:hover { background: transparent; color: #555; }
 .entry-subtitle {
     font-style: italic;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 0.6em;
 }
 
 .entry-description {
     font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     max-width: 500px;
     margin: 0 auto;
     text-align: center;
@@ -408,7 +408,7 @@ button:disabled:hover { background: transparent; color: #555; }
 .option-icon svg {
     width: 32px;
     height: 32px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .option-content {
@@ -426,14 +426,14 @@ button:disabled:hover { background: transparent; color: #555; }
 
 .option-content p {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin: 0;
     line-height: 1.5;
 }
 
 .option-arrow {
     font-size: 2rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
     transition: all 0.3s ease;
 }
 
@@ -452,7 +452,7 @@ button:disabled:hover { background: transparent; color: #555; }
     font-family: 'Roboto Mono', monospace;
     font-size: 0.8rem;
     letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
 }
 
@@ -486,7 +486,7 @@ button:disabled:hover { background: transparent; color: #555; }
 
 .patents-subtitle {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     text-align: center;
     margin: 0;
     letter-spacing: 2px;
@@ -553,7 +553,7 @@ button:disabled:hover { background: transparent; color: #555; }
 .patent-number {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     letter-spacing: 1px;
     min-width: 120px;
 }
@@ -569,7 +569,7 @@ button:disabled:hover { background: transparent; color: #555; }
 .patent-year {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     padding-right: 30px;
 }
 
@@ -601,10 +601,10 @@ button:disabled:hover { background: transparent; color: #555; }
 .patent-detail-badge {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     letter-spacing: 2px;
     padding: 8px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     margin-left: auto;
 }
@@ -624,11 +624,11 @@ button:disabled:hover { background: transparent; color: #555; }
     margin-bottom: 40px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .meta-separator {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .patent-placeholder {
@@ -659,7 +659,7 @@ button:disabled:hover { background: transparent; color: #555; }
 .patent-placeholder p {
     font-family: 'Playfair Display', serif;
     font-size: 1.3rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     margin: 0 0 10px 0;
     text-align: center;
 }
@@ -667,25 +667,24 @@ button:disabled:hover { background: transparent; color: #555; }
 .placeholder-note {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
 }
 
-.patents-location {
+.patents-description {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     margin: 5px 0 0 0;
     text-align: center;
-    font-style: italic;
 }
 
 .patent-inventor {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin-bottom: 35px;
     padding-bottom: 25px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .patent-description {
@@ -697,14 +696,14 @@ button:disabled:hover { background: transparent; color: #555; }
     font-size: 0.8rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     margin: 0 0 15px 0;
 }
 
 .patent-description p {
     font-size: 1.05rem;
     line-height: 1.8;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
     text-align: left;
 }
@@ -718,10 +717,10 @@ button:disabled:hover { background: transparent; color: #555; }
 .patent-link a {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     padding: 12px 24px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     display: inline-block;
     transition: all 0.3s ease;

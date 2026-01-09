@@ -85,7 +85,7 @@ p {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
     line-height: 1.6;
-    color: #bbb;
+    color: #eee;
     margin-bottom: 30px;
     text-align: left;
 }
@@ -135,9 +135,9 @@ button:hover {
     padding: 12px 20px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     text-decoration: none;
     letter-spacing: 1px;
@@ -164,13 +164,13 @@ button:hover {
 .status-text {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
-    color: #888;
+    color: #ddd;
     letter-spacing: 3px;
     text-transform: uppercase;
     background: rgba(0,0,0,0.8);
     padding: 8px 16px;
     border-radius: 20px;
-    border: 1px solid #333;
+    border: 1px solid #444;
 }
 
 .hidden {
@@ -205,7 +205,7 @@ button:hover {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
     letter-spacing: 4px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin-bottom: 25px;
     text-transform: uppercase;
 }
@@ -222,13 +222,13 @@ button:hover {
 .entry-subtitle {
     font-style: italic;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 0.6em;
 }
 
 .entry-description {
     font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     max-width: 500px;
     margin: 0 auto;
     text-align: center;
@@ -295,7 +295,7 @@ button:hover {
 .option-icon svg {
     width: 32px;
     height: 32px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .option-content {
@@ -313,14 +313,14 @@ button:hover {
 
 .option-content p {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin: 0;
     line-height: 1.5;
 }
 
 .option-arrow {
     font-size: 2rem;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
     transition: all 0.3s ease;
 }
 
@@ -339,7 +339,7 @@ button:hover {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.8rem;
     letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
 }
 
@@ -373,7 +373,7 @@ button:hover {
 
 .patents-subtitle {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     text-align: center;
     margin: 0;
     letter-spacing: 2px;
@@ -383,7 +383,7 @@ button:hover {
 .patents-location {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     margin: 5px 0 0 0;
     text-align: center;
     font-style: italic;
@@ -432,7 +432,7 @@ button:hover {
     content: '\2192';
     position: absolute;
     right: 25px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
     font-size: 1.2rem;
     transition: all 0.3s ease;
 }
@@ -450,7 +450,7 @@ button:hover {
 .patent-number {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     letter-spacing: 1px;
     min-width: 120px;
 }
@@ -466,7 +466,7 @@ button:hover {
 .patent-year {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     padding-right: 30px;
 }
 
@@ -500,10 +500,10 @@ button:hover {
     padding: 10px 18px;
     font-size: 0.85rem;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     width: auto;
     letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     flex-shrink: 0;
 }
 
@@ -516,10 +516,10 @@ button:hover {
 .patent-detail-badge {
     font-family: 'Roboto Mono', monospace;
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
     letter-spacing: 2px;
     padding: 8px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     margin-left: auto;
 }
@@ -539,20 +539,20 @@ button:hover {
     margin-bottom: 15px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .meta-separator {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .patent-inventor {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     margin-bottom: 25px;
     padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .patent-description {
@@ -564,14 +564,14 @@ button:hover {
     font-size: 0.8rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     margin: 0 0 12px 0;
 }
 
 .patent-description p {
     font-size: 1rem;
     line-height: 1.7;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
     text-align: left;
 }
@@ -586,7 +586,7 @@ button:hover {
     font-size: 0.8rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     margin: 0 0 15px 0;
 }
 
@@ -614,13 +614,13 @@ button:hover {
 .patent-external-link a {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 .patent-external-link a:hover {
-    color: rgba(255, 255, 255, 0.7);
+    color: #fff;
 }
 
 @media (max-width: 700px) {

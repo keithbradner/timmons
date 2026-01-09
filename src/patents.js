@@ -10,14 +10,54 @@ const PATENTS = [
         pdfUrl: '/patents/US2226438.pdf'
     },
     {
+        number: 'US 2,236,197',
+        patentId: 'US2236197A',
+        patentNum: '2236197',
+        title: 'Photographic Printing Easel',
+        year: '1941',
+        filed: 'January 16, 1940',
+        description: 'A printing easel with hinged glass plate for holding sensitized paper flat during enlargement. Features spring-loaded guide pins for quick paper positioning and an adjustable side pin to accommodate various paper sizes. Simple, affordable design ensures proper alignment with enlarging lenses.',
+        pdfUrl: '/patents/US2236197.pdf'
+    },
+    {
+        number: 'US 2,268,457',
+        patentId: 'US2268457A',
+        patentNum: '2268457',
+        title: 'Developing Tray',
+        year: '1941',
+        filed: 'November 23, 1940',
+        description: 'An improved photographic processing tray with slightly convex bottom and small upward-projecting protuberances. Features dual pouring lips at diagonal corners for ambidextrous use, and a convex exterior bottom for easy rocking agitation. Single-piece construction from enameled steel.',
+        pdfUrl: '/patents/US2268457.pdf'
+    },
+    {
+        number: 'US 2,268,458',
+        patentId: 'US2268458A',
+        patentNum: '2268458',
+        title: 'Photographic Print Drying Frame',
+        year: '1941',
+        filed: 'December 29, 1939',
+        description: 'A curved metal frame with fine mesh wire screen for holding and drying photographic prints. Grips print edges without damaging the emulsion surface, prevents warping during drying, and allows air circulation for faster drying. Multiple frames can stack in spaced arrangement.',
+        pdfUrl: '/patents/US2268458.pdf'
+    },
+    {
         number: 'US 2,327,733',
         patentId: 'US2327733A',
         patentNum: '2327733',
-        title: 'Film Developing Tank',
+        title: 'Improved Film Developing Tank',
         year: '1943',
         filed: 'December 14, 1939',
         description: 'An advanced developing unit with interconnected tanks maintaining consistent temperature via water jacket. Developer liquid flows downward through spaced inlet ports for uniform film exposure. System includes five nested tanks for washing, developing, rinsing, fixing, and final washing. Reduced developing time by 25-33%.',
         pdfUrl: '/patents/US2327733.pdf'
+    },
+    {
+        number: 'US 2,344,558',
+        patentId: 'US2344558A',
+        patentNum: '2344558',
+        title: 'Photographic Enlarger',
+        year: '1944',
+        filed: 'July 22, 1940',
+        description: 'A reflector-type photographic enlarger for producing large prints from small negatives. Features adjustable horizontal and vertical positioning, heat protection with air curtain system, rotatable negative holder, and telescoping lens housing for magnification control.',
+        pdfUrl: '/patents/US2344558.pdf'
     },
     {
         number: 'US 2,365,485',
