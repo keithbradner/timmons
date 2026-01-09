@@ -19,6 +19,8 @@ const { spotLight } = createLights(scene)
 
 // Trays and liquids
 const {
+    bigTray,
+    bigLiquid,
     desensTray,
     devTray,
     devTrayTarget,
@@ -40,9 +42,12 @@ const state = createGameState()
 // Setup UI
 setupUI(state, {
     sheets,
+    bigTray,
+    bigLiquid,
     desensTray,
     desensLiquid,
     devTray,
+    devLiquid,
     devTrayTarget,
     devLiquidTarget,
     updateTimerTexture

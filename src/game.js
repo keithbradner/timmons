@@ -12,12 +12,17 @@ export function createGameState() {
     }
 }
 
+const PHASE2_SHEET_COUNT = 3
+
 export function setupUI(state, deps) {
     const {
         sheets,
+        bigTray,
+        bigLiquid,
         desensTray,
         desensLiquid,
         devTray,
+        devLiquid,
         devTrayTarget,
         devLiquidTarget,
         updateTimerTexture
@@ -48,6 +53,8 @@ export function setupUI(state, deps) {
         desensTray.visible = false
         desensLiquid.visible = false
 
+        state.lightTargetColor.setRGB(0.08, 0.08, 0.08)
+
         sheets.forEach((s, i) => {
             s.targetPos.set(0, 5 + (i * 0.2), -20)
             s.targetRot.set(0, 0, 0)
@@ -61,8 +68,6 @@ export function setupUI(state, deps) {
         state.phase = 'BLIND_WAIT'
         state.accumulatedTime = 0
         updateTimerTexture(0)
-
-        state.lightTargetColor.setRGB(0.08, 0.08, 0.08)
 
         sheets.forEach(s => {
             const rx = (Math.random() - 0.5) * 6
@@ -102,17 +107,29 @@ export function setupUI(state, deps) {
         document.getElementById('panel-result1').classList.add('hidden')
         document.getElementById('panel-phase2').classList.remove('hidden')
 
-        devTrayTarget.set(0, 0, 8)
-        devLiquidTarget.set(0, -1.0, 8)
+        // Hide big tray, show small trays
+        bigTray.visible = false
+        bigLiquid.visible = false
+        devTray.visible = true
+        devLiquid.visible = true
         desensTray.visible = true
         desensLiquid.visible = true
 
-        sheets.forEach((s, i) => {
+        devTrayTarget.set(0, 0, 10)
+        devLiquidTarget.set(0, -1.0, 10)
+
+        // Reset only the first 3 sheets for Phase 2
+        for (let i = 0; i < PHASE2_SHEET_COUNT; i++) {
+            const s = sheets[i]
             s.targetPos.set((Math.random() - 0.5), 5 - (i * 0.1), -20)
             s.targetRot.set(0, 0, 0)
             s.photoMat.opacity = 0
             s.photoMat.color.setHex(0xffffff)
-        })
+        }
+        // Hide remaining sheets
+        for (let i = PHASE2_SHEET_COUNT; i < sheets.length; i++) {
+            sheets[i].targetPos.set(0, -10, -30)
+        }
 
         modeText.innerText = "PHASE 2: INSPECTION"
         state.accumulatedTime = 0
@@ -148,14 +165,15 @@ export function setupUI(state, deps) {
 
             setTimeout(() => {
                 s.targetPos.set(0, 5, -8)
+                state.waterDisturbance = 0.5
                 modeText.innerText = "MOVING TO DEVELOPER..."
 
                 setTimeout(() => {
-                    s.targetPos.set(0, 5, 8)
+                    s.targetPos.set(0, 5, 10)
 
                     setTimeout(() => {
                         modeText.innerText = "STEP 2: DEVELOPING (DARKNESS)"
-                        s.targetPos.set(0, -1.9, 8)
+                        s.targetPos.set(0, -1.9, 10)
                         state.waterDisturbance = 0.8
 
                         state.phase = 'P2_DEVELOPING'
@@ -177,6 +195,7 @@ export function setupUI(state, deps) {
         s.targetPos.set(0, 8, 0)
         s.targetRot.set(0.5, 0, 0)
 
+        state.waterDisturbance = 0.6
         state.lightTargetColor.setRGB(0.1, 0.8, 0.2)
 
         p2ResumeBtn.classList.remove('hidden')
@@ -191,7 +210,7 @@ export function setupUI(state, deps) {
         modeText.innerText = "RESUMING DEVELOPMENT..."
 
         const s = sheets[state.currentSheetIndex]
-        s.targetPos.set(0, -1.9, 8)
+        s.targetPos.set(0, -1.9, 10)
         s.targetRot.set(0, 0, 0)
 
         state.waterDisturbance = 0.5
@@ -204,6 +223,8 @@ export function setupUI(state, deps) {
         p2ResumeBtn.classList.add('hidden')
         p2FinishBtn.classList.add('hidden')
 
+        state.waterDisturbance = 0.5
+
         const s = sheets[state.currentSheetIndex]
         let score = 0
         const dist = Math.abs(s.idealTime - state.inspectionValue)
@@ -215,12 +236,19 @@ export function setupUI(state, deps) {
         s.targetPos.set((Math.random() - 0.5), -2 + (state.currentSheetIndex * 0.1), 20)
         s.targetRot.set(0, 0, 0)
 
-        s.photoMat.color.setHex(0xffffff)
-        if (state.inspectionValue > 1.2) s.photoMat.color.setHex(0x555555)
-        s.photoMat.opacity = Math.min(state.inspectionValue, 1.0)
+        // Match the appearance shown during inspection
+        if (state.inspectionValue <= 1.0) {
+            s.photoMat.opacity = state.inspectionValue
+            s.photoMat.color.setHex(0xffffff)
+        } else {
+            const burn = (state.inspectionValue - 1.0) * 1.5
+            const c = Math.max(0, 1 - burn)
+            s.photoMat.color.setRGB(c, c, c)
+            s.photoMat.opacity = 1.0
+        }
 
         state.currentSheetIndex++
-        if (state.currentSheetIndex >= 5) {
+        if (state.currentSheetIndex >= PHASE2_SHEET_COUNT) {
             endPhase2()
         } else {
             state.phase = 'P2_IDLE'
@@ -236,15 +264,16 @@ export function setupUI(state, deps) {
         state.phase = 'REVIEW'
         actionBar.classList.add('hidden')
 
-        sheets.forEach((s, i) => {
+        for (let i = 0; i < PHASE2_SHEET_COUNT; i++) {
+            const s = sheets[i]
             const xOffset = (i % 2 === 0) ? -3.5 : 3.5
             const zOffset = -5 + (i * 3.5)
             s.targetPos.set(xOffset, 4, zOffset)
             s.targetRot.set(0.5, 0, (i % 2 === 0 ? 0.1 : -0.1))
-        })
+        }
 
         const total = state.scoreLog.reduce((a, b) => a + b, 0)
-        const avg = Math.round(total / 5)
+        const avg = Math.round(total / PHASE2_SHEET_COUNT)
         let verdict = avg >= 90 ? "Master Pictorialist" : (avg >= 70 ? "Skilled Printer" : "Novice")
 
         document.getElementById('final-score-val').innerText = avg + "%"

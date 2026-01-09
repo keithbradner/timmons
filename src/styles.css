@@ -63,7 +63,7 @@ body {
     border-bottom: 2px solid #555;
     box-shadow: 0 20px 50px rgba(0,0,0,0.95);
     padding: 40px 30px;
-    margin: 20px auto 15vh auto;
+    margin: 20px auto 25vh auto;
     border-radius: 4px;
     pointer-events: auto;
     width: 85%;
@@ -144,14 +144,15 @@ button:disabled {
 button:disabled:hover { background: transparent; color: #555; }
 
 .hud-top {
-    padding: 40px 20px;
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    right: 0;
     text-align: center;
     pointer-events: none;
     display: flex;
-    flex-direction: row;
-    align-items: flex-start;
     justify-content: center;
-    position: relative;
+    z-index: 100;
 }
 
 /* Global back button - fixed to screen */
@@ -206,7 +207,7 @@ button:disabled:hover { background: transparent; color: #555; }
 /* Action Bar for Portrait Mobile/Kiosk */
 #action-bar {
     position: absolute;
-    bottom: 15%;
+    bottom: 25%;
     width: 100%;
     display: flex;
     flex-direction: column;

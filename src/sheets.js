@@ -1,11 +1,11 @@
 import * as THREE from 'three'
 
 const photoData = [
-    { src: 'images/photo1.jpg', devRate: 0.0006, idealTime: 1.0 },
-    { src: 'images/photo2.jpg', devRate: 0.0012, idealTime: 0.85 },
-    { src: 'images/photo3.jpg', devRate: 0.0004, idealTime: 1.15 },
-    { src: 'images/photo4.jpg', devRate: 0.0010, idealTime: 0.9 },
-    { src: 'images/photo5.jpg', devRate: 0.0005, idealTime: 1.1 }
+    { src: 'images/photo1.jpg', devRate: 0.0012, idealTime: 1.0 },
+    { src: 'images/photo2.jpg', devRate: 0.0018, idealTime: 0.85 },
+    { src: 'images/photo3.jpg', devRate: 0.0010, idealTime: 1.1 },
+    { src: 'images/photo4.jpg', devRate: 0.0014, idealTime: 0.9 },
+    { src: 'images/photo5.jpg', devRate: 0.0011, idealTime: 1.05 }
 ]
 
 export function createSheets(scene) {
@@ -14,7 +14,7 @@ export function createSheets(scene) {
     const paperW = 5
     const paperH = 6
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < photoData.length; i++) {
         const sheetGroup = new THREE.Group()
 
         const paperGeo = new THREE.BoxGeometry(paperW, 0.02, paperH)

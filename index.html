@@ -25,20 +25,19 @@
             </div>
 
             <div class="entry-options">
-                <a href="/darkroom.html" class="entry-option">
+                <button class="entry-option" onclick="enterDarkroom()">
                     <div class="option-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="3" y="3" width="18" height="18" rx="2"/>
                             <circle cx="12" cy="12" r="3"/>
-                            <path d="M3 9h18M9 21V9"/>
                         </svg>
                     </div>
                     <div class="option-content">
                         <h2>The Darkroom</h2>
-                        <p>Experience Dever Timmons' revolutionary inspection development technique</p>
+                        <p>Try the inspection development technique Dever Timmons used</p>
                     </div>
                     <div class="option-arrow">&rarr;</div>
-                </a>
+                </button>
 
                 <button class="entry-option" onclick="enterPatents()">
                     <div class="option-icon">
@@ -120,150 +119,33 @@
                     <div class="patent-iframe-container">
                         <iframe id="patent-pdf-iframe" src="" title="Patent Document"></iframe>
                     </div>
-                    <div class="patent-external-link">
-                        <a id="patent-google-link" href="#" target="_blank" rel="noopener noreferrer">
-                            Also available on Google Patents &rarr;
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <script>
-        // Patent data for Walter B. Moore (Coshocton, Ohio)
-        const PATENTS = [
-            {
-                number: 'US 2,226,438',
-                patentId: 'US2226438A',
-                patentNum: '2226438',
-                title: 'Film-Developing Tank',
-                year: '1940',
-                filed: 'May 28, 1938',
-                description: 'A transparent tank design allowing observation of film development progress. Features a helical screw circulation system that pumps developer from bottom to top, preventing air bubble accumulation on film surfaces. Includes spring-operated timing device and light-tight cover for use in illuminated rooms.',
-                pdfUrl: '/patents/US2226438.pdf'
-            },
-            {
-                number: 'US 2,327,733',
-                patentId: 'US2327733A',
-                patentNum: '2327733',
-                title: 'Film Developing Tank',
-                year: '1943',
-                filed: 'December 14, 1939',
-                description: 'An advanced developing unit with interconnected tanks maintaining consistent temperature via water jacket. Developer liquid flows downward through spaced inlet ports for uniform film exposure. System includes five nested tanks for washing, developing, rinsing, fixing, and final washing. Reduced developing time by 25-33%.',
-                pdfUrl: '/patents/US2327733.pdf'
-            },
-            {
-                number: 'US 2,365,485',
-                patentId: 'US2365485A',
-                patentNum: '2365485',
-                title: 'Film Developing Rack',
-                year: '1944',
-                filed: 'June 21, 1943',
-                description: 'A portable rack system for suspending roll film, film packs, and cut film in spaced arrangement during chemical processing. Features rectangular frame with notched pins and spring-latch retention. Enables quick transfer between multiple processing tanks while ensuring uniform chemical distribution.',
-                pdfUrl: '/patents/US2365485.pdf'
+    <script type="module">
+        import { setupInactivityTimer } from '/src/inactivity.js'
+        import { initPatents, handleBack, enterPatents, viewPatent, returnToPatents, returnToEntry, getCurrentView } from '/src/patents.js'
+
+        initPatents()
+
+        // Expose functions for onclick handlers
+        window.handleBack = handleBack
+        window.enterPatents = enterPatents
+        window.viewPatent = viewPatent
+        window.returnToPatents = returnToPatents
+
+        setupInactivityTimer(() => {
+            if (getCurrentView() !== 'entry') {
+                returnToEntry()
             }
-        ];
+        })
 
-        const globalBackBtn = document.getElementById('global-back-btn');
-        const globalBackBtnBottom = document.getElementById('global-back-btn-bottom');
-        const panelEntry = document.getElementById('panel-entry');
-        const panelPatents = document.getElementById('panel-patents');
-        const panelPatentDetail = document.getElementById('panel-patent-detail');
-
-        // Track current view for back button
-        let currentView = 'entry';
-
-        function updateBackButton() {
-            if (currentView === 'entry') {
-                globalBackBtn.classList.add('hidden');
-                globalBackBtnBottom.classList.add('hidden');
-            } else {
-                globalBackBtn.classList.remove('hidden');
-                globalBackBtnBottom.classList.remove('hidden');
-            }
+        window.enterDarkroom = function() {
+            window.location.href = '/darkroom.html'
         }
-
-        function handleBack() {
-            if (currentView === 'patent-detail') {
-                returnToPatents();
-            } else if (currentView === 'patents') {
-                returnToEntry();
-            }
-        }
-
-        function enterPatents() {
-            panelEntry.classList.add('hidden');
-            panelPatents.classList.remove('hidden');
-            currentView = 'patents';
-            updateBackButton();
-        }
-
-        function returnToEntry() {
-            panelPatents.classList.add('hidden');
-            panelPatentDetail.classList.add('hidden');
-            panelEntry.classList.remove('hidden');
-            currentView = 'entry';
-            updateBackButton();
-        }
-
-        function viewPatent(index) {
-            const patent = PATENTS[index];
-            if (!patent) return;
-
-            // Update detail view content
-            document.getElementById('patent-detail-number').innerText = patent.number;
-            document.getElementById('patent-detail-title').innerText = patent.title;
-            document.getElementById('patent-detail-year').innerText = patent.year;
-            document.getElementById('patent-detail-filed').innerText = patent.filed;
-            document.getElementById('patent-detail-description').innerText = patent.description;
-
-            // Set up Google Patents link
-            const googlePatentsUrl = `https://patents.google.com/patent/${patent.patentId}`;
-            document.getElementById('patent-google-link').href = googlePatentsUrl;
-
-            // Load PDF in iframe
-            document.getElementById('patent-pdf-iframe').src = patent.pdfUrl;
-
-            panelPatents.classList.add('hidden');
-            panelPatentDetail.classList.remove('hidden');
-            currentView = 'patent-detail';
-            updateBackButton();
-        }
-
-        function returnToPatents() {
-            // Clear iframe to stop loading/free resources
-            document.getElementById('patent-pdf-iframe').src = '';
-
-            panelPatentDetail.classList.add('hidden');
-            panelPatents.classList.remove('hidden');
-            currentView = 'patents';
-            updateBackButton();
-        }
-
-        // Inactivity timeout - return to entry after 10 minutes
-        const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in ms
-        let inactivityTimer = null;
-
-        function resetInactivityTimer() {
-            if (inactivityTimer) {
-                clearTimeout(inactivityTimer);
-            }
-            inactivityTimer = setTimeout(() => {
-                if (currentView !== 'entry') {
-                    returnToEntry();
-                }
-            }, INACTIVITY_TIMEOUT);
-        }
-
-        // Listen for user activity
-        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer, { passive: true });
-        });
-
-        // Start the timer
-        resetInactivityTimer();
     </script>
 </body>
 </html>

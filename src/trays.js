@@ -5,29 +5,36 @@ function createLabel(text, subText) {
     canvas.width = 512
     canvas.height = 160
     const ctx = canvas.getContext('2d')
-    ctx.fillStyle = 'rgba(0,0,0,0)'
-    ctx.fillRect(0, 0, 512, 160)
+
+    // Draw backing
+    ctx.fillStyle = 'rgba(20, 20, 20, 0.95)'
+    ctx.beginPath()
+    ctx.roundRect(8, 4, 496, 152, 12)
+    ctx.fill()
+
+    // Draw border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = 3
+    ctx.stroke()
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.shadowColor = "rgba(0,0,0,0.8)"
-    ctx.shadowBlur = 10
     ctx.fillStyle = '#ffffff'
 
-    ctx.font = 'bold 50px "Roboto Mono", monospace'
-    ctx.fillText(text, 256, 50)
+    ctx.font = 'bold 56px "Roboto Mono", monospace'
+    ctx.fillText(text, 256, 55)
 
     if (subText) {
-        ctx.font = 'italic 36px "Playfair Display", serif'
-        ctx.fillStyle = '#cccccc'
-        ctx.fillText(subText, 256, 100)
+        ctx.font = 'italic 32px "Playfair Display", serif'
+        ctx.fillStyle = '#aaaaaa'
+        ctx.fillText(subText, 256, 110)
     }
 
     const tex = new THREE.CanvasTexture(canvas)
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
-    const geo = new THREE.PlaneGeometry(10, 3)
+    const geo = new THREE.PlaneGeometry(12, 3.5)
     const mesh = new THREE.Mesh(geo, mat)
-    mesh.rotation.x = -Math.PI / 2.5
+    mesh.rotation.x = -Math.PI / 3
     return mesh
 }
 
@@ -63,22 +70,39 @@ export function createTray(width, height, depth, labelText, chemText) {
 }
 
 export function createTraysAndLiquids(scene) {
-    // TRAY 1: Desensitizer
-    const desensTray = createTray(16, 1.5, 12, "DESENSITIZER", "Pinakryptol Green")
+    // Big tray for Phase 1
+    const bigTray = createTray(16, 1.5, 12, "DEVELOPER", "Metol-Hydroquinone")
+    bigTray.position.set(0, 0, 0)
+    scene.add(bigTray)
+
+    const bigLiquidGeo = new THREE.PlaneGeometry(15.8, 11.8, 64, 48)
+    const bigLiquidMat = new THREE.MeshPhysicalMaterial({
+        color: 0x221105,
+        roughness: 0.05,
+        transmission: 0.9,
+        opacity: 0.95,
+        transparent: true
+    })
+    const bigLiquid = new THREE.Mesh(bigLiquidGeo, bigLiquidMat)
+    bigLiquid.rotation.x = -Math.PI / 2
+    bigLiquid.position.set(0, -1.0, 0)
+    scene.add(bigLiquid)
+
+    // Small trays for Phase 2
+    const desensTray = createTray(12, 1.5, 9, "DESENSITIZER", "Pinakryptol Green")
     desensTray.position.set(0, 0, -8)
     desensTray.visible = false
     scene.add(desensTray)
 
-    // TRAY 2: Developer
-    const devTray = createTray(16, 1.5, 12, "DEVELOPER", "Metol-Hydroquinone")
+    const devTray = createTray(12, 1.5, 9, "DEVELOPER", "Metol-Hydroquinone")
     devTray.position.set(0, 0, 0)
+    devTray.visible = false
     scene.add(devTray)
 
     const devTrayTarget = new THREE.Vector3(0, 0, 0)
     const devLiquidTarget = new THREE.Vector3(0, -1.0, 0)
 
-    // Liquids
-    const liquidGeo = new THREE.PlaneGeometry(15.8, 11.8, 64, 48)
+    const liquidGeo = new THREE.PlaneGeometry(11.8, 8.8, 64, 48)
 
     const devLiquidMat = new THREE.MeshPhysicalMaterial({
         color: 0x221105,
@@ -90,6 +114,7 @@ export function createTraysAndLiquids(scene) {
     const devLiquid = new THREE.Mesh(liquidGeo, devLiquidMat)
     devLiquid.rotation.x = -Math.PI / 2
     devLiquid.position.set(0, -1.0, 0)
+    devLiquid.visible = false
     scene.add(devLiquid)
 
     const desensLiquidMat = new THREE.MeshPhysicalMaterial({
@@ -106,6 +131,8 @@ export function createTraysAndLiquids(scene) {
     scene.add(desensLiquid)
 
     return {
+        bigTray,
+        bigLiquid,
         desensTray,
         devTray,
         devTrayTarget,
