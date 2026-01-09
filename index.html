@@ -56,6 +56,22 @@
                     </div>
                     <div class="option-arrow">&rarr;</div>
                 </button>
+
+                <button class="entry-option" onclick="enterPhotobooth()">
+                    <div class="option-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="12" cy="12" r="1.5"/>
+                            <circle cx="17" cy="7" r="1"/>
+                        </svg>
+                    </div>
+                    <div class="option-content">
+                        <h2>Timmons Photobooth</h2>
+                        <p>Take your portrait in the style of Dever Timmons</p>
+                    </div>
+                    <div class="option-arrow">&rarr;</div>
+                </button>
             </div>
 
             <div class="entry-footer">
@@ -167,6 +183,10 @@
 
         window.enterDarkroom = function() {
             window.location.href = '/darkroom.html'
+        }
+
+        window.enterPhotobooth = function() {
+            window.location.href = '/photobooth.html'
         }
     </script>
 </body>

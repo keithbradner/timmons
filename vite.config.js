@@ -9,7 +9,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        darkroom: resolve(__dirname, 'darkroom.html')
+        darkroom: resolve(__dirname, 'darkroom.html'),
+        photobooth: resolve(__dirname, 'photobooth.html'),
+        printqueue: resolve(__dirname, 'printqueue.html')
       }
     }
   },
