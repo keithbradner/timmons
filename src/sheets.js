@@ -2,11 +2,11 @@ import * as THREE from 'three'
 
 // Photo data with actual aspect ratios from the images
 const photoData = [
-    { src: '/images/photo1.jpg', width: 858, height: 1024, devRate: 0.0012, idealTime: 1.0 },
-    { src: '/images/photo2.jpg', width: 797, height: 1024, devRate: 0.0014, idealTime: 1.0 },
-    { src: '/images/photo3.jpg', width: 841, height: 1024, devRate: 0.0010, idealTime: 1.0 },
-    { src: '/images/photo4.jpg', width: 1024, height: 819, devRate: 0.0013, idealTime: 1.0 },
-    { src: '/images/photo5.jpg', width: 773, height: 1024, devRate: 0.0011, idealTime: 1.0 }
+    { src: '/images/photo1-v2.jpg', width: 858, height: 1024, devRate: 0.0012, idealTime: 1.0 },
+    { src: '/images/photo2-v2.jpg', width: 797, height: 1024, devRate: 0.0014, idealTime: 1.0 },
+    { src: '/images/photo3-v2.jpg', width: 841, height: 1024, devRate: 0.0010, idealTime: 1.0 },
+    { src: '/images/photo4-v2.jpg', width: 1024, height: 819, devRate: 0.0013, idealTime: 1.0 },
+    { src: '/images/photo5-v2.jpg', width: 773, height: 1024, devRate: 0.0011, idealTime: 1.0 }
 ]
 
 export function createSheets(scene) {
