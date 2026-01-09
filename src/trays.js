@@ -3,36 +3,54 @@ import * as THREE from 'three'
 function createLabel(text, subText) {
     const canvas = document.createElement('canvas')
     canvas.width = 512
-    canvas.height = 160
+    canvas.height = 180
     const ctx = canvas.getContext('2d')
 
-    // Draw backing
-    ctx.fillStyle = 'rgba(20, 20, 20, 0.95)'
+    // Wood backing
+    ctx.fillStyle = '#5c4033'
     ctx.beginPath()
-    ctx.roundRect(8, 4, 496, 152, 12)
+    ctx.roundRect(4, 4, 504, 172, 6)
     ctx.fill()
 
-    // Draw border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-    ctx.lineWidth = 3
+    // Wood grain effect
+    ctx.strokeStyle = 'rgba(40, 25, 15, 0.4)'
+    ctx.lineWidth = 1
+    for (let i = 0; i < 20; i++) {
+        const y = 10 + i * 8 + Math.random() * 4
+        ctx.beginPath()
+        ctx.moveTo(8, y)
+        ctx.lineTo(504, y + (Math.random() - 0.5) * 6)
+        ctx.stroke()
+    }
+
+    // Cream/ivory paper label inset
+    ctx.fillStyle = '#f5f0e1'
+    ctx.beginPath()
+    ctx.roundRect(20, 16, 472, 148, 4)
+    ctx.fill()
+
+    // Subtle aged border on paper
+    ctx.strokeStyle = '#c4b89e'
+    ctx.lineWidth = 2
     ctx.stroke()
 
+    // Main text - bold black with thick uniform strokes
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = '#000000'
+    ctx.font = 'bold 54px Arial Black, Arial, sans-serif'
+    ctx.fillText(text, 256, 60)
 
-    ctx.font = 'bold 56px "Roboto Mono", monospace'
-    ctx.fillText(text, 256, 55)
-
+    // Subtext (chemical name)
     if (subText) {
-        ctx.font = 'italic 32px "Playfair Display", serif'
-        ctx.fillStyle = '#aaaaaa'
-        ctx.fillText(subText, 256, 110)
+        ctx.font = 'bold 26px Arial, sans-serif'
+        ctx.fillStyle = '#000000'
+        ctx.fillText(subText, 256, 115)
     }
 
     const tex = new THREE.CanvasTexture(canvas)
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
-    const geo = new THREE.PlaneGeometry(12, 3.5)
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: false, side: THREE.DoubleSide })
+    const geo = new THREE.PlaneGeometry(12, 4)
     const mesh = new THREE.Mesh(geo, mat)
     mesh.rotation.x = -Math.PI / 3
     return mesh
