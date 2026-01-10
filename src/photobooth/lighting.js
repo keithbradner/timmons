@@ -44,32 +44,32 @@ export function applyDirectionalLighting(pixels, width, height, mask, intensity 
             const keyDist = Math.sqrt(toKeyX * toKeyX + toKeyY * toKeyY)
 
             // Key light intensity - stronger falloff for more drama
-            const keyIntensity = 1.0 / (1.0 + keyDist * 2.5)
+            const keyIntensity = 1.0 / (1.0 + keyDist * 2.0)
 
             // Directional component - face the light to be brighter
-            const keyDirection = Math.max(0, toKeyX * 0.7 + toKeyY * 0.3)
+            const keyDirection = Math.max(0, toKeyX * 0.8 + toKeyY * 0.4)
 
             // Combined key light contribution
-            const keyLight = (keyIntensity * 0.6 + keyDirection * 0.4)
+            const keyLight = (keyIntensity * 0.7 + keyDirection * 0.5)
 
             // Fill light - softer, from opposite side
             const toFillX = fillLightX - normX
             const toFillY = fillLightY - normY
             const fillDist = Math.sqrt(toFillX * toFillX + toFillY * toFillY)
-            const fillLight = 0.3 / (1.0 + fillDist * 2.0)
+            const fillLight = 0.2 / (1.0 + fillDist * 2.0)
 
             // Rim/edge lighting - brightens edges of subject for separation
             const edgeFactor = maskVal * (1.0 - maskVal) * 4.0
-            const rimLight = edgeFactor * 0.4
+            const rimLight = edgeFactor * 0.5
 
             // Combine lights - key is dominant, fill softens shadows, rim adds pop
-            const totalLight = keyLight * 1.4 + fillLight + rimLight
+            const totalLight = keyLight * 1.6 + fillLight + rimLight
 
-            // Create more dramatic range: ~0.4 (deep shadow) to ~1.5 (bright highlight)
-            const adjusted = 0.4 + totalLight * 1.1
+            // Create more dramatic range: ~0.3 (deep shadow) to ~1.7 (bright highlight)
+            const adjusted = 0.3 + totalLight * 1.4
 
             // Apply boost intensity
-            const lightEffect = 1.0 + (adjusted - 1.0) * intensity * 1.3
+            const lightEffect = 1.0 + (adjusted - 1.0) * intensity * 1.5
 
             // Blend based on mask value
             const lightFactor = 1.0 + (lightEffect - 1.0) * maskVal

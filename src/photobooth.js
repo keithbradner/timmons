@@ -30,6 +30,18 @@ document.addEventListener('DOMContentLoaded', init)
 
 async function init() {
     state.initElements()
+
+    // Disable right-click context menu (and long-press on touch)
+    document.addEventListener('contextmenu', e => e.preventDefault())
+
+    // Disable pinch zoom
+    document.addEventListener('touchstart', e => {
+        if (e.touches.length > 1) e.preventDefault()
+    }, { passive: false })
+    document.addEventListener('touchmove', e => {
+        if (e.touches.length > 1) e.preventDefault()
+    }, { passive: false })
+
     setupLevelButtons()
     setupInactivityTimer(() => {
         window.location.href = '/'
@@ -74,12 +86,9 @@ async function setEffectLevel(effectName, level) {
         })
     }
 
-    // Show spinner for heavy operations
-    const heavyEffects = ['silhouette', 'lighting']
-    if (heavyEffects.includes(effectName)) {
-        showEditorProcessing('Applying effect...')
-        await yieldToMain()
-    }
+    // Show brief processing indicator
+    showEditorProcessing('Applying...')
+    await yieldToMain()
 
     applyLevelSettings()
     await updatePreview()
@@ -122,10 +131,14 @@ async function initCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                width: { ideal: 768 },
-                height: { ideal: 960 },
+                width: { ideal: 3840 },
+                height: { ideal: 2160 },
                 aspectRatio: { ideal: 4/5 },
-                facingMode: 'user'
+                facingMode: 'user',
+                resizeMode: 'none',
+                focusMode: 'continuous',
+                exposureMode: 'continuous',
+                whiteBalanceMode: 'continuous'
             },
             audio: false
         })
@@ -133,6 +146,16 @@ async function initCamera() {
         state.setVideoStream(stream)
         state.elements.video.srcObject = stream
         await state.elements.video.play()
+
+        // Log actual camera settings and capabilities
+        const track = stream.getVideoTracks()[0]
+        const settings = track.getSettings()
+        const capabilities = track.getCapabilities()
+        console.log('=== CAMERA INFO ===')
+        console.log('Actual resolution:', `${settings.width}x${settings.height}`)
+        console.log('Max supported:', `${capabilities.width?.max}x${capabilities.height?.max}`)
+        console.log('All settings:', settings)
+        console.log('All capabilities:', capabilities)
 
         state.elements.cameraLoading.classList.add('hidden')
         state.elements.captureBtn.disabled = false
@@ -203,13 +226,40 @@ function startCountdown() {
             state.elements.captureBtnText.textContent = '3'
 
             // Capture frame BEFORE pausing (webcam streams may not draw correctly when paused)
+            // Crop to 4:5 aspect ratio at full resolution
+            const videoWidth = state.elements.video.videoWidth
+            const videoHeight = state.elements.video.videoHeight
+            const targetAspect = 4 / 5
+            const videoAspect = videoWidth / videoHeight
+
+            let cropWidth, cropHeight, cropX, cropY
+            if (videoAspect > targetAspect) {
+                // Video is wider than 4:5 - crop sides
+                cropHeight = videoHeight
+                cropWidth = Math.round(videoHeight * targetAspect)
+                cropX = Math.round((videoWidth - cropWidth) / 2)
+                cropY = 0
+            } else {
+                // Video is taller than 4:5 - crop top/bottom
+                cropWidth = videoWidth
+                cropHeight = Math.round(videoWidth / targetAspect)
+                cropX = 0
+                cropY = Math.round((videoHeight - cropHeight) / 2)
+            }
+
             const captureCanvas = document.createElement('canvas')
-            captureCanvas.width = state.elements.video.videoWidth
-            captureCanvas.height = state.elements.video.videoHeight
+            captureCanvas.width = cropWidth
+            captureCanvas.height = cropHeight
             const captureCtx = captureCanvas.getContext('2d')
             captureCtx.translate(captureCanvas.width, 0)
             captureCtx.scale(-1, 1)
-            captureCtx.drawImage(state.elements.video, 0, 0)
+            // Draw cropped region from video
+            captureCtx.drawImage(
+                state.elements.video,
+                cropX, cropY, cropWidth, cropHeight,  // Source rectangle
+                0, 0, cropWidth, cropHeight            // Destination rectangle
+            )
+            console.log(`Captured ${cropWidth}x${cropHeight} (4:5 crop from ${videoWidth}x${videoHeight})`)
 
             state.elements.video.pause()
             showCaptureProcessing('Hold still...')
@@ -587,6 +637,38 @@ function startOver() {
     state.showPanel('intro')
 }
 
+function goBack() {
+    // Navigate back based on current panel
+    // Flow: intro -> camera -> editor -> success
+    switch (state.currentPanel) {
+        case 'intro':
+            // Go back to main index
+            window.location.href = '/'
+            break
+        case 'camera':
+            // Stop video stream and go back to intro
+            if (state.videoStream) {
+                state.videoStream.getTracks().forEach(track => track.stop())
+                state.setVideoStream(null)
+            }
+            state.showPanel('intro')
+            break
+        case 'editor':
+            // Go back to camera (retake)
+            retakePhoto()
+            break
+        case 'success':
+            // Start completely over
+            startOver()
+            break
+        case 'processing':
+            // Don't allow back during processing
+            break
+        default:
+            state.showPanel('intro')
+    }
+}
+
 async function cropToSubject() {
     showEditorProcessing('Framing subject...')
     await yieldToMain()
@@ -626,15 +708,14 @@ async function openManualCrop() {
     }
 
     manualCropState.active = true
-    // Initialize with 4:5 aspect ratio (width/height = 0.8)
-    const aspectRatio = 4 / 5
-    const initialHeight = 0.8
-    const initialWidth = initialHeight * aspectRatio  // 0.64
+    // Initialize with 4:5 aspect ratio
+    // Since container is also 4:5, normalized width = height for same aspect
+    const initialSize = 0.8
     manualCropState.box = {
-        x: (1 - initialWidth) / 2,  // Center horizontally
+        x: (1 - initialSize) / 2,  // Center horizontally
         y: 0.1,
-        width: initialWidth,
-        height: initialHeight
+        width: initialSize,
+        height: initialSize
     }
     overlay.classList.remove('hidden')
     updateCropOverlay()
@@ -678,23 +759,33 @@ function setupCropListeners() {
     const cropBox = document.getElementById('crop-box')
     if (!overlay || !cropBox) return
 
-    const onMouseDown = (e) => {
+    // Helper to get coordinates from mouse or touch event
+    const getCoords = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        }
+        return { x: e.clientX, y: e.clientY }
+    }
+
+    const onStart = (e) => {
         e.preventDefault()
         const handle = e.target.dataset.handle
         manualCropState.dragging = true
         manualCropState.dragType = handle || 'move'
-        manualCropState.startX = e.clientX
-        manualCropState.startY = e.clientY
+        const coords = getCoords(e)
+        manualCropState.startX = coords.x
+        manualCropState.startY = coords.y
     }
 
-    const onMouseMove = (e) => {
+    const onMove = (e) => {
         if (!manualCropState.dragging) return
 
         const preview = document.querySelector('.editor-preview')
         const rect = preview.getBoundingClientRect()
 
-        const dx = (e.clientX - manualCropState.startX) / rect.width
-        const dy = (e.clientY - manualCropState.startY) / rect.height
+        const coords = getCoords(e)
+        const dx = (coords.x - manualCropState.startX) / rect.width
+        const dy = (coords.y - manualCropState.startY) / rect.height
 
         const box = manualCropState.box
 
@@ -703,45 +794,45 @@ function setupCropListeners() {
             box.y = Math.max(0, Math.min(1 - box.height, box.y + dy))
         } else {
             // Handle resize with aspect ratio constraint (4:5)
-            const aspect = 4 / 5
+            // Since container is 4:5 and target is 4:5, normalized width = height
 
             if (manualCropState.dragType.includes('e')) {
-                const newWidth = Math.max(0.1, Math.min(1 - box.x, box.width + dx))
-                box.width = newWidth
-                box.height = newWidth / aspect
+                const newSize = Math.max(0.1, Math.min(1 - box.x, box.width + dx))
+                box.width = newSize
+                box.height = newSize
             }
             if (manualCropState.dragType.includes('w')) {
-                const newWidth = Math.max(0.1, box.width - dx)
-                const newX = box.x + (box.width - newWidth)
+                const newSize = Math.max(0.1, box.width - dx)
+                const newX = box.x + (box.width - newSize)
                 if (newX >= 0) {
                     box.x = newX
-                    box.width = newWidth
-                    box.height = newWidth / aspect
+                    box.width = newSize
+                    box.height = newSize
                 }
             }
             if (manualCropState.dragType.includes('s')) {
-                const newHeight = Math.max(0.1, Math.min(1 - box.y, box.height + dy))
-                box.height = newHeight
-                box.width = newHeight * aspect
+                const newSize = Math.max(0.1, Math.min(1 - box.y, box.height + dy))
+                box.height = newSize
+                box.width = newSize
             }
             if (manualCropState.dragType.includes('n')) {
-                const newHeight = Math.max(0.1, box.height - dy)
-                const newY = box.y + (box.height - newHeight)
+                const newSize = Math.max(0.1, box.height - dy)
+                const newY = box.y + (box.height - newSize)
                 if (newY >= 0) {
                     box.y = newY
-                    box.height = newHeight
-                    box.width = newHeight * aspect
+                    box.height = newSize
+                    box.width = newSize
                 }
             }
 
             // Clamp to bounds while maintaining aspect ratio
             if (box.x + box.width > 1) {
                 box.width = 1 - box.x
-                box.height = box.width / aspect
+                box.height = box.width
             }
             if (box.y + box.height > 1) {
                 box.height = 1 - box.y
-                box.width = box.height * aspect
+                box.width = box.height
             }
             // Make sure x doesn't go negative after width adjustment
             if (box.x < 0) {
@@ -749,24 +840,33 @@ function setupCropListeners() {
             }
         }
 
-        manualCropState.startX = e.clientX
-        manualCropState.startY = e.clientY
+        manualCropState.startX = coords.x
+        manualCropState.startY = coords.y
         updateCropOverlay()
     }
 
-    const onMouseUp = () => {
+    const onEnd = () => {
         manualCropState.dragging = false
     }
 
-    cropBox.addEventListener('mousedown', onMouseDown)
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
+    // Mouse events
+    cropBox.addEventListener('mousedown', onStart)
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onEnd)
+
+    // Touch events
+    cropBox.addEventListener('touchstart', onStart, { passive: false })
+    document.addEventListener('touchmove', onMove, { passive: false })
+    document.addEventListener('touchend', onEnd)
 
     // Store cleanup function
     overlay._cleanup = () => {
-        cropBox.removeEventListener('mousedown', onMouseDown)
-        document.removeEventListener('mousemove', onMouseMove)
-        document.removeEventListener('mouseup', onMouseUp)
+        cropBox.removeEventListener('mousedown', onStart)
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onEnd)
+        cropBox.removeEventListener('touchstart', onStart)
+        document.removeEventListener('touchmove', onMove)
+        document.removeEventListener('touchend', onEnd)
     }
 }
 
@@ -812,6 +912,7 @@ window.capturePhoto = capturePhoto
 window.retakePhoto = retakePhoto
 window.sendToPrint = sendToPrint
 window.startOver = startOver
+window.goBack = goBack
 window.applyPreset = applyPreset
 window.enableDebugMode = enableDebugMode
 window.cropToSubject = cropToSubject

@@ -105,10 +105,10 @@ export const effectValues = {
     lighting: { lightBoost: [0, 0.5, 0.85, 1.2] },  // lighting intensity - more pronounced
     highcontrast: { contrast: [1.0, 1.3, 1.6, 2.2] },
     crushedblacks: { shadows: [0, 8, 18, 35] },
-    grain: { grain: [0, 12, 24, 40] },
+    grain: { grain: [0, 6, 12, 22] },
     vignette: { vignette: [0, 30, 55, 85] },
-    sepia: { sepia: [0, 6, 14, 25] },
-    softness: { blur: [0, 0.3, 0.6, 1.2] }
+    sepia: { sepia: [0, 15, 30, 50] },
+    softness: { blur: [0, 0.8, 1.5, 2.5] }
 }
 
 // Base values (applied first, then effects modify them)
@@ -200,12 +200,33 @@ export function initElements() {
     elements.captureProcessingText = document.getElementById('capture-processing-text')
 }
 
+// Current panel tracking for back navigation
+export let currentPanel = 'intro'
+
 // Show/hide panels
 export function showPanel(panelName) {
+    currentPanel = panelName
+
     Object.values(panels).forEach(panel => {
         if (panel) panel.classList.add('hidden')
     })
     if (panels[panelName]) {
         panels[panelName].classList.remove('hidden')
+    }
+
+    // Show/hide camera arrow overlay (only visible on camera panel)
+    const cameraArrow = document.getElementById('camera-arrow-overlay')
+    if (cameraArrow) {
+        if (panelName === 'camera') {
+            cameraArrow.classList.remove('hidden')
+        } else {
+            cameraArrow.classList.add('hidden')
+        }
+    }
+
+    // Show step-back button on all panels
+    const stepBackBtn = document.getElementById('step-back-btn')
+    if (stepBackBtn) {
+        stepBackBtn.classList.remove('hidden')
     }
 }

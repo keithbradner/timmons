@@ -62,9 +62,9 @@ export function applyTimmonsFilters(imageData, mask = null) {
 
         if (filterSettings.sepia > 0) {
             const sepiaAmount = filterSettings.sepia / 100
-            finalR = gray + (gray * 0.15 * sepiaAmount)
-            finalG = gray + (gray * 0.05 * sepiaAmount)
-            finalB = gray - (gray * 0.1 * sepiaAmount)
+            finalR = gray + (gray * 0.25 * sepiaAmount)
+            finalG = gray + (gray * 0.08 * sepiaAmount)
+            finalB = gray - (gray * 0.18 * sepiaAmount)
         }
 
         // 8. Add film grain uniformly

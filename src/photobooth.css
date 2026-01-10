@@ -75,6 +75,11 @@ body {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+.global-back-btn-bottom {
+    top: auto;
+    bottom: 24px;
+}
+
 .hidden {
     display: none !important;
 }
@@ -131,6 +136,11 @@ body {
     line-height: 1.8;
     color: rgba(255, 255, 255, 0.9);
     margin: 0 0 25px 0;
+}
+
+.style-header {
+    margin-bottom: 15px !important;
+    font-weight: 500;
 }
 
 .style-points {
@@ -200,6 +210,44 @@ body {
     padding: 40px;
     width: 90%;
     max-width: 700px;
+    position: relative;
+}
+
+/* Arrow pointing to physical camera at top of screen */
+.camera-arrow-overlay {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+    animation: arrowBounce 1.5s ease-in-out infinite;
+}
+
+.camera-arrow {
+    width: 0;
+    height: 0;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-bottom: 40px solid #4ade80;
+    filter: drop-shadow(0 0 15px rgba(74, 222, 128, 0.6));
+}
+
+.camera-arrow-label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    color: #4ade80;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 700;
+}
+
+@keyframes arrowBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-8px); }
 }
 
 .camera-header h2 {
@@ -901,6 +949,7 @@ body {
 .crop-darkened {
     position: absolute;
     background: rgba(0, 0, 0, 0.7);
+    pointer-events: none;
 }
 
 .crop-top {

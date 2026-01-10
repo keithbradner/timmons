@@ -12,6 +12,7 @@
     <div class="grain"></div>
 
     <a href="/" class="global-back-btn global-back-btn-top">&larr; Back</a>
+    <button id="step-back-btn" class="global-back-btn global-back-btn-bottom" onclick="goBack()">&larr; Back</button>
 
     <div id="ui-layer">
         <!-- Initial Welcome/Instructions Screen -->
@@ -22,14 +23,20 @@
             </div>
 
             <div class="intro-content">
-                <p>William "Dever" Timmons was known for his dramatic silhouettes and high-contrast portraits. His technique emphasized:</p>
+                <p>William "Dever" Timmons (1887-1951) was a Texas portrait photographer whose work bridged the Pictorialist movement and modern commercial photography. Working from his Dallas studio in the 1920s-40s, he created striking portraits that emphasized artistic expression over mere documentation.</p>
+
+                <p>Pictorialism treated photography as fine art, not just a technical process. Practitioners used soft focus, dramatic lighting, and darkroom techniques to create images that rivaled paintings in their emotional depth.</p>
+
+                <p class="style-header">Timmons' signature techniques included:</p>
                 <ul class="style-points">
-                    <li><strong>Clean backgrounds</strong> - Uncluttered or solid black</li>
-                    <li><strong>Strong backlighting</strong> - Creating dramatic silhouettes</li>
-                    <li><strong>High contrast</strong> - Deep blacks and bright whites</li>
-                    <li><strong>Atmospheric grain</strong> - The texture of 1930s film</li>
+                    <li><strong>Isolated subjects</strong> - Figures emerging from dark, uncluttered backgrounds</li>
+                    <li><strong>Rembrandt lighting</strong> - Dramatic side lighting with deep shadows</li>
+                    <li><strong>High contrast</strong> - Rich blacks and luminous highlights</li>
+                    <li><strong>Warm toning</strong> - Selenium or sepia baths for archival warmth</li>
+                    <li><strong>Film grain</strong> - The organic texture of silver gelatin prints</li>
                 </ul>
-                <p class="intro-note">Step in front of the camera and we'll transform your portrait using these techniques.</p>
+
+                <p class="intro-note">Step in front of the camera to create your own portrait using these historic techniques.</p>
             </div>
 
             <button class="start-btn" onclick="startPhotobooth()">
@@ -37,11 +44,17 @@
             </button>
         </div>
 
+        <!-- Arrow pointing to physical camera at top of screen (shown during camera panel) -->
+        <div id="camera-arrow-overlay" class="camera-arrow-overlay hidden">
+            <div class="camera-arrow"></div>
+            <span class="camera-arrow-label">Camera</span>
+        </div>
+
         <!-- Camera/Capture Screen -->
         <div id="panel-camera" class="panel camera-panel hidden">
             <div class="camera-header">
-                <h2>Position Yourself</h2>
-                <p>Stand 3-4 feet from the camera. The background will be removed automatically.</p>
+                <h2>Touch to Start</h2>
+                <p>Look at the camera with the green light at the top of the display</p>
             </div>
 
             <div class="camera-container">
@@ -276,8 +289,8 @@
                         </div>
                     </div>
 
-                    <!-- Print Section -->
-                    <div class="print-section">
+                    <!-- Print Section (hidden for now) -->
+                    <div class="print-section hidden">
                         <div class="print-section-content">
                             <span class="print-icon">🖼</span>
                             <div class="print-text">
@@ -291,7 +304,7 @@
                         </div>
                     </div>
 
-                    <div class="debug-buttons">
+                    <div class="debug-buttons hidden">
                         <button class="debug-toggle-btn" onclick="enableDebugMode()">+ Max</button>
                         <button class="debug-toggle-btn" onclick="toggleDebugPanel()">⚙ Debug</button>
                     </div>
