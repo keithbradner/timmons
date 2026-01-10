@@ -269,12 +269,16 @@ class AudioManager {
     if (this.currentIndex >= this.shuffledTracks.length) {
       this.shuffleTracks()
       this.currentIndex = 0
+      console.log('🔄 Playlist complete, reshuffling and looping...')
     }
-    this.audio.src = `/audio/${this.shuffledTracks[this.currentIndex]}`
-    this.audio.play().catch(err => {
-      console.warn('Playback failed:', err)
-    })
-    this.updateDisplay()
+    if (this.isPlaying) {
+      this.audio.src = `/audio/${this.shuffledTracks[this.currentIndex]}`
+      this.audio.play().catch(err => {
+        console.warn('Playback failed, retrying next track:', err)
+        setTimeout(() => this.playNext(), 100)
+      })
+      this.updateDisplay()
+    }
   }
 
   playPrevious() {
