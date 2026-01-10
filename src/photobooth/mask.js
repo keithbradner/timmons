@@ -5,6 +5,7 @@
 
 /**
  * Create a soft mask with feathered edges from binary segmentation data
+ * (Legacy function for BodyPix)
  */
 export function createSoftMask(segmentationData, width, height) {
     // Convert binary mask to float mask
@@ -17,6 +18,29 @@ export function createSoftMask(segmentationData, width, height) {
     const eroded = erodeMask(mask, width, height, 1)
     const dilated = dilateMask(eroded, width, height, 2)
     const blurred = gaussianBlurMask(dilated, width, height, 8)
+
+    return blurred
+}
+
+/**
+ * Create a soft mask from MediaPipe confidence values
+ * MediaPipe already provides smooth 0-1 confidence values,
+ * so we just need light processing to smooth edges without losing hair detail
+ */
+export function createSoftMaskFromConfidence(confidenceData, width, height) {
+    // MediaPipe confidence values are already smooth (0-1 float)
+    // Copy to a new array since the original may be freed
+    const mask = new Float32Array(confidenceData.length)
+    for (let i = 0; i < confidenceData.length; i++) {
+        mask[i] = confidenceData[i]
+    }
+
+    // Very light dilation to capture fine hair strands that might be just under threshold
+    const dilated = dilateMask(mask, width, height, 1)
+
+    // Light gaussian blur for smooth, feathered edges
+    // Smaller radius than before to preserve hair detail
+    const blurred = gaussianBlurMask(dilated, width, height, 4)
 
     return blurred
 }

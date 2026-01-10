@@ -15,7 +15,7 @@ export function applyTimmonsFilters(imageData, mask = null) {
     const width = imageData.width
     const height = imageData.height
 
-    // Pre-calculate vignette map (only applied to subject when mask present)
+    // Pre-calculate vignette map
     const vignetteMap = createVignetteMap(width, height, filterSettings.vignette)
 
     for (let i = 0; i < pixels.length; i += 4) {
@@ -23,44 +23,33 @@ export function applyTimmonsFilters(imageData, mask = null) {
         const x = pixelIndex % width
         const y = Math.floor(pixelIndex / width)
 
-        // Get mask value for this pixel (1 = subject, 0 = background)
+        // Get mask value for this pixel (1 = subject, 0 = background, smooth values in between)
         const maskValue = mask ? mask[pixelIndex] : 1
-        const isSubject = maskValue > 0.5
 
         let r = pixels[i]
         let g = pixels[i + 1]
         let b = pixels[i + 2]
 
-        // Handle background dimming
-        if (mask && maskValue < 0.5 && filterSettings.backgroundDim > 0) {
+        // Handle background dimming with smooth blending
+        if (mask && filterSettings.backgroundDim > 0) {
             const dimFactor = 1 - filterSettings.backgroundDim
-            r *= dimFactor
-            g *= dimFactor
-            b *= dimFactor
+            const dimmedR = r * dimFactor
+            const dimmedG = g * dimFactor
+            const dimmedB = b * dimFactor
+            // Smooth blend: maskValue 0 = full dim, maskValue 1 = no dim
+            r = lerp(dimmedR, r, maskValue)
+            g = lerp(dimmedG, g, maskValue)
+            b = lerp(dimmedB, b, maskValue)
         }
 
         // 1. Convert to grayscale using luminance formula
         let gray = 0.299 * r + 0.587 * g + 0.114 * b
 
-        // 2. Apply brightness (subject only when mask present)
-        if (!mask || isSubject) {
-            gray = gray * filterSettings.brightness
-        }
-
-        // 3. Apply contrast (subject only when mask present)
-        if (!mask || isSubject) {
-            gray = applyContrast(gray, filterSettings.contrast)
-        }
-
-        // 4. Crush shadows (subject only when mask present)
-        if (!mask || isSubject) {
-            gray = crushShadows(gray, filterSettings.shadows)
-        }
-
-        // 5. Lift highlights (subject only when mask present)
-        if (!mask || isSubject) {
-            gray = liftHighlights(gray, filterSettings.highlights)
-        }
+        // 2-5. Apply all tonal effects uniformly (only dimming is mask-dependent)
+        gray = gray * filterSettings.brightness
+        gray = applyContrast(gray, filterSettings.contrast)
+        gray = crushShadows(gray, filterSettings.shadows)
+        gray = liftHighlights(gray, filterSettings.highlights)
 
         // 6. Apply vignette (always applies to full image for period-authentic look)
         const vignetteValue = vignetteMap[y * width + x]
@@ -78,10 +67,9 @@ export function applyTimmonsFilters(imageData, mask = null) {
             finalB = gray - (gray * 0.1 * sepiaAmount)
         }
 
-        // 8. Add film grain (subject only when mask present, lighter on background)
+        // 8. Add film grain uniformly
         if (filterSettings.grain > 0) {
-            const grainStrength = (!mask || isSubject) ? 1.0 : 0.3
-            const grainAmount = (Math.random() - 0.5) * filterSettings.grain * grainStrength
+            const grainAmount = (Math.random() - 0.5) * filterSettings.grain
             finalR += grainAmount
             finalG += grainAmount
             finalB += grainAmount
@@ -92,6 +80,11 @@ export function applyTimmonsFilters(imageData, mask = null) {
         pixels[i + 1] = clamp(finalG, 0, 255)
         pixels[i + 2] = clamp(finalB, 0, 255)
     }
+}
+
+// Linear interpolation helper
+function lerp(a, b, t) {
+    return a + (b - a) * t
 }
 
 function applyContrast(value, contrast) {

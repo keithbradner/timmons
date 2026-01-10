@@ -3,8 +3,7 @@
  * Creates portraits in the style of William "Dever" Timmons
  */
 
-import '@tensorflow/tfjs'
-import * as bodyPix from '@tensorflow-models/body-pix'
+import { ImageSegmenter, FilesetResolver } from '@mediapipe/tasks-vision'
 
 import { setupInactivityTimer } from './inactivity.js'
 import { audioManager } from './audio-manager.js'
@@ -12,7 +11,10 @@ import { audioManager } from './audio-manager.js'
 // Import modules
 import * as state from './photobooth/state.js'
 import { applyTimmonsFilters } from './photobooth/filters.js'
-import { createSoftMask } from './photobooth/mask.js'
+import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.js'
+
+// MediaPipe segmenter instance
+let imageSegmenter = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { upscaleImage } from './photobooth/upscale.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
@@ -109,7 +111,7 @@ function enableDebugMode() {
 async function startPhotobooth() {
     state.showPanel('camera')
     await initCamera()
-    await loadBodyPixModel()
+    await loadSegmentationModel()
 }
 
 async function initCamera() {
@@ -136,19 +138,27 @@ async function initCamera() {
     }
 }
 
-async function loadBodyPixModel() {
-    if (state.bodyPixModel) return
+async function loadSegmentationModel() {
+    if (imageSegmenter) return
 
     try {
-        const model = await bodyPix.load({
-            architecture: 'ResNet50',
-            outputStride: 16,
-            quantBytes: 4
+        const vision = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        )
+
+        imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+                delegate: 'GPU'
+            },
+            runningMode: 'IMAGE',
+            outputCategoryMask: false,
+            outputConfidenceMasks: true
         })
-        state.setBodyPixModel(model)
-        console.log('BodyPix model loaded')
+
+        console.log('MediaPipe Selfie Segmenter loaded')
     } catch (error) {
-        console.error('Failed to load BodyPix:', error)
+        console.error('Failed to load MediaPipe segmenter:', error)
     }
 }
 
@@ -222,30 +232,41 @@ async function capturePhoto(preCapuredCanvas) {
     const height = canvas.height
     const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Run segmentation
+    // Run segmentation with MediaPipe
     let segMask = null
     try {
-        if (state.bodyPixModel) {
+        if (imageSegmenter) {
             showCaptureProcessing('Detecting subject...')
             await yieldToMain()
-            const segmentation = await state.bodyPixModel.segmentPerson(canvas, {
-                flipHorizontal: false,
-                internalResolution: 'medium',
-                segmentationThreshold: 0.6
-            })
 
-            // Check if any subject was detected (at least 1% of pixels)
-            const subjectPixels = segmentation.data.reduce((sum, val) => sum + val, 0)
-            const totalPixels = segmentation.data.length
-            const subjectRatio = subjectPixels / totalPixels
+            // MediaPipe returns confidence masks - we want the person mask
+            const result = imageSegmenter.segment(canvas)
 
-            if (subjectRatio > 0.01) {
-                showCaptureProcessing('Refining edges...')
-                await yieldToMain()
-                segMask = createSoftMask(segmentation.data, width, height)
-                console.log(`Subject detected: ${(subjectRatio * 100).toFixed(1)}% of frame`)
-            } else {
-                console.log('No subject detected, skipping background effects')
+            if (result.confidenceMasks && result.confidenceMasks.length > 0) {
+                // Get the confidence mask (0-1 float values)
+                const maskData = result.confidenceMasks[0].getAsFloat32Array()
+
+                // Check if any subject was detected (at least 1% of pixels > 0.5)
+                let subjectPixels = 0
+                for (let i = 0; i < maskData.length; i++) {
+                    if (maskData[i] > 0.5) subjectPixels++
+                }
+                const subjectRatio = subjectPixels / maskData.length
+
+                if (subjectRatio > 0.01) {
+                    showCaptureProcessing('Refining edges...')
+                    await yieldToMain()
+
+                    // MediaPipe already gives us smooth confidence values
+                    // Just apply light blur for extra smooth edges
+                    segMask = createSoftMaskFromConfidence(maskData, width, height)
+                    console.log(`Subject detected: ${(subjectRatio * 100).toFixed(1)}% of frame`)
+                } else {
+                    console.log('No subject detected, skipping background effects')
+                }
+
+                // Close the mask to free memory
+                result.confidenceMasks[0].close()
             }
         }
     } catch (error) {
@@ -328,6 +349,9 @@ async function updatePreview() {
         if (state.segmentationMask) {
             sourceMask = cropMask(state.segmentationMask, state.imageOriginal.width, state.subjectBounds)
         }
+        console.log(`Applying effects to CROPPED image: ${sourceImage.width}x${sourceImage.height} (original: ${state.imageOriginal.width}x${state.imageOriginal.height})`)
+    } else {
+        console.log(`Applying effects to FULL image: ${sourceImage.width}x${sourceImage.height}`)
     }
 
     // Update canvas size if needed
@@ -457,12 +481,7 @@ async function sendToPrint() {
     let finalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
     // Upscale for print quality
-    if (processingStatus) processingStatus.textContent = 'Upscaling for print...'
-    const upscaledImage = await upscaleImage(finalImageData, (progress) => {
-        if (processingStatus) {
-            processingStatus.textContent = `Upscaling... ${Math.round(progress * 100)}%`
-        }
-    })
+    const upscaledImage = await upscaleImage(finalImageData, () => {})
 
     if (upscaledImage) {
         // Create new canvas with upscaled dimensions
@@ -551,7 +570,16 @@ async function openManualCrop() {
     }
 
     manualCropState.active = true
-    manualCropState.box = { x: 0.1, y: 0.1, width: 0.8, height: 0.8 }
+    // Initialize with 4:5 aspect ratio (width/height = 0.8)
+    const aspectRatio = 4 / 5
+    const initialHeight = 0.8
+    const initialWidth = initialHeight * aspectRatio  // 0.64
+    manualCropState.box = {
+        x: (1 - initialWidth) / 2,  // Center horizontally
+        y: 0.1,
+        width: initialWidth,
+        height: initialHeight
+    }
     overlay.classList.remove('hidden')
     updateCropOverlay()
     setupCropListeners()
@@ -650,9 +678,19 @@ function setupCropListeners() {
                 }
             }
 
-            // Clamp to bounds
-            if (box.x + box.width > 1) box.width = 1 - box.x
-            if (box.y + box.height > 1) box.height = 1 - box.y
+            // Clamp to bounds while maintaining aspect ratio
+            if (box.x + box.width > 1) {
+                box.width = 1 - box.x
+                box.height = box.width / aspect
+            }
+            if (box.y + box.height > 1) {
+                box.height = 1 - box.y
+                box.width = box.height * aspect
+            }
+            // Make sure x doesn't go negative after width adjustment
+            if (box.x < 0) {
+                box.x = 0
+            }
         }
 
         manualCropState.startX = e.clientX
@@ -724,9 +762,71 @@ window.cropToSubject = cropToSubject
 window.openManualCrop = openManualCrop
 window.applyCrop = applyCrop
 window.cancelCrop = cancelCrop
-window.toggleDebugPanel = debug.toggleDebugPanel
+window.toggleDebugPanel = () => {
+    debug.setUpdatePreviewCallback(updatePreview)  // Enable live updates
+    debug.toggleDebugPanel()
+}
 window.selectDebugPreset = debug.selectDebugPreset
 window.updateDebugValue = debug.updateDebugValue
 window.applyDebugSettings = () => debug.applyDebugSettings(updatePreview)
 window.saveDebugPreset = () => debug.saveDebugPreset(applyPreset, updatePreview)
 window.exportPresets = debug.exportPresets
+window.resetToDefault = debug.resetToDefault
+window.setToNeutral = debug.setToNeutral
+
+// Technique info modal
+const techniqueInfo = {
+    isolate: {
+        title: 'Isolate Subject',
+        text: 'In the 1930s, portrait photographers like Timmons hung heavy black velvet curtains behind their subjects. The velvet\'s deep pile absorbed nearly all light, creating a perfectly dark background that made the subject seem to float in space. This technique drew all attention to the face and eliminated distracting backgrounds.'
+    },
+    lighting: {
+        title: 'Portrait Lighting',
+        text: 'Timmons used a single powerful tungsten lamp, positioned high and to one side of the subject—a technique called "Rembrandt lighting" after the Dutch master painter. A white reflector on the opposite side would gently fill the shadows. This created dramatic dimension and sculpted the face with light and shadow.'
+    },
+    contrast: {
+        title: 'High Contrast',
+        text: 'In the darkroom, photographers controlled contrast by choosing different paper "grades." Higher grades produced more dramatic separation between light and dark. Timmons was known for his striking tonal range, using techniques like "dodging" (blocking light to brighten areas) and "burning" (adding light to darken areas) during printing.'
+    },
+    blacks: {
+        title: 'Crushed Blacks',
+        text: 'By slightly underexposing the negative in-camera and then printing on "hard" paper, photographers could push shadow details into pure black. This created the bold silhouette effect Timmons was famous for—faces emerging dramatically from darkness, with shadow areas becoming inky black rather than gray.'
+    },
+    grain: {
+        title: 'Film Grain',
+        text: 'The "grain" you see in vintage photos comes from clumps of silver halide crystals in the film emulsion. 1930s photographers used large 4×5 inch sheet film, which had finer grain than smaller formats. The subtle texture adds authenticity and a handmade quality that digital images lack.'
+    },
+    vignette: {
+        title: 'Vignette',
+        text: 'Large-format portrait lenses naturally produced darker corners because light had to travel farther to reach the edges of the film. Photographers often enhanced this effect in the darkroom by shading the print\'s edges during exposure. The darkened corners draw the viewer\'s eye toward the center and the subject\'s face.'
+    },
+    tone: {
+        title: 'Warm Tone',
+        text: 'After developing and fixing a print, photographers would bathe it in selenium or gold toner solutions. These chemical baths shifted the image color from cool neutral gray toward warm brown tones, while also making the print more archival and resistant to fading. The warm tone gives portraits a timeless, elegant quality.'
+    },
+    softfocus: {
+        title: 'Soft Focus',
+        text: 'Early portrait lenses were "uncoated," meaning light scattered slightly as it passed through the glass elements. Some photographers deliberately used older brass lenses or even smeared petroleum jelly on lens edges to create a dreamy glow around highlights. This "Pictorialist" style was considered artistic and flattering for portraits.'
+    }
+}
+
+window.showTechniqueInfo = function(technique) {
+    const info = techniqueInfo[technique]
+    if (!info) return
+
+    document.getElementById('technique-modal-title').textContent = info.title
+    document.getElementById('technique-modal-text').textContent = info.text
+    document.getElementById('technique-modal').classList.remove('hidden')
+}
+
+window.closeTechniqueInfo = function() {
+    document.getElementById('technique-modal').classList.add('hidden')
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('technique-modal')
+    if (e.target === modal) {
+        modal.classList.add('hidden')
+    }
+})

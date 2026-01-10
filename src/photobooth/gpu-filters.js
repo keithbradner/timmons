@@ -278,24 +278,61 @@ fn calcVignette(x: f32, y: f32, width: f32, height: f32, intensity: f32) -> f32 
     return max(0.3, vignette);
 }
 
-// Calculate directional lighting contribution
+// Calculate dramatic Rembrandt-style portrait lighting
 fn calcLighting(x: f32, y: f32, width: f32, height: f32, maskVal: f32, boost: f32) -> f32 {
-    if (boost <= 0.0 || maskVal < 0.5) {
+    if (boost <= 0.0 || maskVal < 0.05) {
         return 1.0;
     }
 
-    // Light from upper-right (Rembrandt style)
     let normX = x / width;
     let normY = y / height;
 
-    // Gradient from upper-right
-    let lightX = 1.0 - normX;  // Brighter on right
-    let lightY = 1.0 - normY;  // Brighter on top
+    // Key light position: upper-right, classic portrait position
+    let keyLightX: f32 = 0.85;
+    let keyLightY: f32 = 0.1;
 
-    let lightFactor = (lightX * 0.6 + lightY * 0.4);
-    let adjusted = 0.7 + lightFactor * 0.6;  // Range 0.7 to 1.3
+    // Fill light position: left side, lower
+    let fillLightX: f32 = 0.15;
+    let fillLightY: f32 = 0.4;
 
-    return mix(1.0, adjusted, boost);
+    // Distance from key light (creates falloff)
+    let toKeyX = keyLightX - normX;
+    let toKeyY = keyLightY - normY;
+    let keyDist = sqrt(toKeyX * toKeyX + toKeyY * toKeyY);
+
+    // Key light intensity - stronger falloff for more drama
+    // Closer to light = brighter, uses inverse square-ish falloff
+    let keyIntensity = 1.0 / (1.0 + keyDist * 2.5);
+
+    // Directional component - face the light to be brighter
+    let keyDirection = max(0.0, toKeyX * 0.7 + toKeyY * 0.3);
+
+    // Combined key light contribution
+    let keyLight = (keyIntensity * 0.6 + keyDirection * 0.4);
+
+    // Fill light - softer, from opposite side
+    let toFillX = fillLightX - normX;
+    let toFillY = fillLightY - normY;
+    let fillDist = sqrt(toFillX * toFillX + toFillY * toFillY);
+    let fillLight = 0.3 / (1.0 + fillDist * 2.0);
+
+    // Rim/edge lighting - brightens edges of subject for separation
+    // Stronger where mask transitions from subject to background
+    let edgeFactor = maskVal * (1.0 - maskVal) * 4.0;  // Peaks at maskVal = 0.5
+    let rimLight = edgeFactor * 0.4;
+
+    // Combine lights - key is dominant, fill softens shadows, rim adds pop
+    let totalLight = keyLight * 1.4 + fillLight + rimLight;
+
+    // Create more dramatic range: dark shadows to bright highlights
+    // Range: ~0.4 (deep shadow) to ~1.5 (bright highlight)
+    let adjusted = 0.4 + totalLight * 1.1;
+
+    // Apply boost intensity
+    let lightEffect = mix(1.0, adjusted, boost * 1.3);
+
+    // Only apply to subject (smooth blend at edges)
+    return mix(1.0, lightEffect, maskVal);
 }
 
 @compute @workgroup_size(8, 8)
@@ -311,22 +348,26 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     let idx = y * width + x;
     let pixel = input[idx];
-    let maskVal = mask[idx];
-    let isSubject = maskVal > 0.5;
+    let maskVal = mask[idx];  // 0.0 = background, 1.0 = subject, smooth values in between
 
     var r = pixel.x;
     var g = pixel.y;
     var b = pixel.z;
 
-    // 1. Background dimming
-    if (maskVal < 0.5 && uniforms.backgroundDim > 0.0) {
+    // 1. Background dimming - smooth blend based on mask value
+    // maskVal 0 = full dim, maskVal 1 = no dim
+    if (uniforms.backgroundDim > 0.0) {
         let dimFactor = 1.0 - uniforms.backgroundDim;
-        r = r * dimFactor;
-        g = g * dimFactor;
-        b = b * dimFactor;
+        let dimmedR = r * dimFactor;
+        let dimmedG = g * dimFactor;
+        let dimmedB = b * dimFactor;
+        // Smoothly blend between dimmed (background) and original (subject)
+        r = mix(dimmedR, r, maskVal);
+        g = mix(dimmedG, g, maskVal);
+        b = mix(dimmedB, b, maskVal);
     }
 
-    // 2. Apply directional lighting (before grayscale)
+    // 2. Apply directional lighting (before grayscale) - already uses smooth mask
     let lightMult = calcLighting(f32(x), f32(y), f32(width), f32(height), maskVal, uniforms.lightBoost);
     r = clamp(r * lightMult, 0.0, 1.0);
     g = clamp(g * lightMult, 0.0, 1.0);
@@ -335,25 +376,11 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     // 3. Convert to grayscale
     var gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-    // 4. Apply brightness (subject only when mask present)
-    if (maskVal > 0.5 || uniforms.backgroundDim <= 0.0) {
-        gray = gray * uniforms.brightness;
-    }
-
-    // 5. Apply contrast
-    if (maskVal > 0.5 || uniforms.backgroundDim <= 0.0) {
-        gray = applyContrast(gray, uniforms.contrast);
-    }
-
-    // 6. Crush shadows
-    if (maskVal > 0.5 || uniforms.backgroundDim <= 0.0) {
-        gray = crushShadows(gray, uniforms.shadows);
-    }
-
-    // 7. Lift highlights
-    if (maskVal > 0.5 || uniforms.backgroundDim <= 0.0) {
-        gray = liftHighlights(gray, uniforms.highlights);
-    }
+    // 4-7. Apply all tonal effects uniformly (only dimming is mask-dependent)
+    gray = gray * uniforms.brightness;
+    gray = applyContrast(gray, uniforms.contrast);
+    gray = crushShadows(gray, uniforms.shadows);
+    gray = liftHighlights(gray, uniforms.highlights);
 
     // 8. Apply vignette
     let vignetteFactor = calcVignette(f32(x), f32(y), f32(width), f32(height), uniforms.vignette);
@@ -371,13 +398,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         finalB = gray - (gray * 0.1 * sepiaAmount);
     }
 
-    // 10. Add film grain
+    // 10. Add film grain uniformly
     if (uniforms.grain > 0.0) {
-        var grainStrength = 1.0;
-        if (maskVal < 0.5 && uniforms.backgroundDim > 0.0) {
-            grainStrength = 0.3;
-        }
-        let grainAmount = random(f32(x), f32(y), uniforms.randomSeed) * (uniforms.grain / 255.0) * grainStrength;
+        let grainAmount = random(f32(x), f32(y), uniforms.randomSeed) * (uniforms.grain / 255.0);
         finalR = finalR + grainAmount;
         finalG = finalG + grainAmount;
         finalB = finalB + grainAmount;
