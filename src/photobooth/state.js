@@ -57,7 +57,7 @@ export function setDebugMode(enabled) { debugMode = enabled }
 
 // Enhancement settings (debug only)
 export const enhanceSettings = {
-    enabled: false,
+    enabled: true,
     order: 'before',  // 'before' or 'after' other filters
     autoWhiteBalance: 0.5,
     localContrast: 0.4,
