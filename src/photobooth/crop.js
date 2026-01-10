@@ -182,23 +182,18 @@ export async function cropToSubject(applySettingsCallback, updatePreviewCallback
     // Target aspect ratio 4:5 (portrait)
     const targetRatio = 4 / 5
 
-    // Adaptive padding based on frame type and coverage
+    // Tight padding - we want to crop close to the subject
+    // Just enough room for headroom and breathing space
     let paddingMultiplier
     switch (subject.frameType) {
         case 'headshot':
-            paddingMultiplier = { width: 1.8, height: 1.6 }  // Tighter crop
+            paddingMultiplier = { width: 1.15, height: 1.1 }  // Very tight
             break
         case 'full':
-            paddingMultiplier = { width: 1.3, height: 1.2 }  // More breathing room
+            paddingMultiplier = { width: 1.1, height: 1.08 }  // Tight
             break
         default: // bust
-            paddingMultiplier = { width: 1.5, height: 1.4 }
-    }
-
-    // If subject is already filling frame, reduce padding
-    if (subject.coverage > 0.3) {
-        paddingMultiplier.width *= 0.85
-        paddingMultiplier.height *= 0.85
+            paddingMultiplier = { width: 1.12, height: 1.1 }  // Tight
     }
 
     const paddedWidth = subject.width * paddingMultiplier.width
@@ -215,26 +210,9 @@ export async function cropToSubject(applySettingsCallback, updatePreviewCallback
         cropWidth = cropHeight * targetRatio
     }
 
-    // Ensure minimum crop size for quality
-    const minCropDim = Math.min(width, height) * 0.4
-    if (cropWidth < minCropDim) {
-        cropWidth = minCropDim
-        cropHeight = cropWidth / targetRatio
-    }
-
     // Rule of thirds: position eyes at upper third line
-    // For headshots, eyes should be higher; for full body, head should be in upper third
-    let targetEyePosition
-    switch (subject.frameType) {
-        case 'headshot':
-            targetEyePosition = cropHeight * 0.38  // Eyes slightly above center
-            break
-        case 'full':
-            targetEyePosition = cropHeight * 0.25  // Head in upper quarter
-            break
-        default:
-            targetEyePosition = cropHeight / 3     // Classic rule of thirds
-    }
+    // Eyes should be roughly 1/3 from the top
+    const targetEyePosition = cropHeight * 0.33
 
     // Calculate crop position
     let cropY = subject.head.eyeY - targetEyePosition
