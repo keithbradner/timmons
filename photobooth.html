@@ -6,9 +6,6 @@
     <title>Timmons Photobooth - The Timmons Collection</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/photobooth.css">
-    <!-- TensorFlow.js and BodyPix for background removal -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
 </head>
 <body>
     <div class="overlay"></div>
@@ -53,13 +50,22 @@
                 <div id="camera-loading" class="camera-loading">
                     <span>Initializing camera...</span>
                 </div>
+                <div id="countdown-overlay" class="countdown-overlay hidden">
+                    <span id="countdown-number">3</span>
+                </div>
+                <div id="capture-processing-overlay" class="capture-processing-overlay hidden">
+                    <div class="capture-spinner"></div>
+                    <span id="capture-processing-text">Processing...</span>
+                </div>
             </div>
 
             <div class="camera-controls">
-                <button id="capture-btn" class="capture-btn" onclick="capturePhoto()" disabled>
-                    <div class="capture-btn-inner"></div>
+                <button id="capture-btn" class="capture-btn" onclick="startCountdown()" disabled>
+                    <div class="capture-btn-inner">
+                        <span class="capture-btn-text">3</span>
+                    </div>
                 </button>
-                <p class="capture-hint">Touch to capture</p>
+                <p class="capture-hint">Touch to start 3-second timer</p>
             </div>
         </div>
 
@@ -78,72 +84,251 @@
                 <div class="editor-preview">
                     <canvas id="editor-canvas"></canvas>
                     <div class="preview-frame"></div>
+                    <!-- Editor Processing Spinner -->
+                    <div id="editor-processing" class="editor-processing hidden">
+                        <div class="editor-spinner"></div>
+                        <span id="editor-processing-text">Applying...</span>
+                    </div>
+                    <!-- Manual Crop Overlay -->
+                    <div id="crop-overlay" class="crop-overlay hidden">
+                        <div class="crop-darkened crop-top"></div>
+                        <div class="crop-darkened crop-bottom"></div>
+                        <div class="crop-darkened crop-left"></div>
+                        <div class="crop-darkened crop-right"></div>
+                        <div id="crop-box" class="crop-box">
+                            <div class="crop-handle crop-handle-nw" data-handle="nw"></div>
+                            <div class="crop-handle crop-handle-ne" data-handle="ne"></div>
+                            <div class="crop-handle crop-handle-sw" data-handle="sw"></div>
+                            <div class="crop-handle crop-handle-se" data-handle="se"></div>
+                        </div>
+                        <div class="crop-actions">
+                            <button class="crop-action-btn" onclick="applyCrop()">Apply</button>
+                            <button class="crop-action-btn secondary" onclick="cancelCrop()">Cancel</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="editor-controls">
-                    <h2>Adjust Your Portrait</h2>
-                    <p class="editor-subtitle">Fine-tune the Timmons effect</p>
+                    <h2>Style Your Portrait</h2>
+                    <p class="editor-subtitle">In the manner of William "Dever" Timmons</p>
 
-                    <div class="control-group">
-                        <div class="control-item">
-                            <label>Contrast</label>
-                            <input type="range" id="ctrl-contrast" min="0.5" max="2.5" step="0.05" value="1.4">
-                            <span class="control-value" id="val-contrast">140%</span>
+                    <!-- Toggle Options -->
+                    <div class="toggle-section">
+                        <h3 class="section-title">Composition</h3>
+
+                        <div class="crop-controls">
+                            <button class="crop-btn" onclick="cropToSubject()">
+                                <span class="crop-icon">⌖</span>
+                                <span class="crop-label">
+                                    <strong>Auto-Frame Subject</strong>
+                                    <small>Timmons often cropped tight on faces</small>
+                                </span>
+                            </button>
+                            <button class="crop-btn" onclick="openManualCrop()">
+                                <span class="crop-icon">⊞</span>
+                                <span class="crop-label">
+                                    <strong>Manual Crop</strong>
+                                    <small>Drag to frame your composition</small>
+                                </span>
+                            </button>
                         </div>
 
-                        <div class="control-item">
-                            <label>Brightness</label>
-                            <input type="range" id="ctrl-brightness" min="0.5" max="1.5" step="0.05" value="0.9">
-                            <span class="control-value" id="val-brightness">90%</span>
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Isolate Subject</strong>
+                                <small>Timmons shot against dark curtains or painted backdrops to black</small>
+                            </span>
+                            <div class="level-buttons" data-effect="silhouette">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Dim</button>
+                                <button class="level-btn active" data-level="2">Dark</button>
+                                <button class="level-btn level-max hidden" data-level="3">Black</button>
+                            </div>
                         </div>
 
-                        <div class="control-item">
-                            <label>Shadow Crush</label>
-                            <input type="range" id="ctrl-shadows" min="0" max="100" step="5" value="40">
-                            <span class="control-value" id="val-shadows">40</span>
-                        </div>
-
-                        <div class="control-item">
-                            <label>Highlight Lift</label>
-                            <input type="range" id="ctrl-highlights" min="0" max="50" step="5" value="20">
-                            <span class="control-value" id="val-highlights">20</span>
-                        </div>
-
-                        <div class="control-item">
-                            <label>Film Grain</label>
-                            <input type="range" id="ctrl-grain" min="0" max="50" step="2" value="20">
-                            <span class="control-value" id="val-grain">20</span>
-                        </div>
-
-                        <div class="control-item">
-                            <label>Vignette</label>
-                            <input type="range" id="ctrl-vignette" min="0" max="100" step="5" value="30">
-                            <span class="control-value" id="val-vignette">30%</span>
-                        </div>
-
-                        <div class="control-item">
-                            <label>Sepia Warmth</label>
-                            <input type="range" id="ctrl-sepia" min="0" max="30" step="2" value="10">
-                            <span class="control-value" id="val-sepia">10%</span>
-                        </div>
-
-                        <div class="control-item">
-                            <label>Edge Softness</label>
-                            <input type="range" id="ctrl-blur" min="0" max="3" step="0.5" value="0.5">
-                            <span class="control-value" id="val-blur">0.5px</span>
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Portrait Lighting</strong>
+                                <small>Rembrandt-style key light from upper right, as Timmons used</small>
+                            </span>
+                            <div class="level-buttons" data-effect="lighting">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Soft</button>
+                                <button class="level-btn active" data-level="2">Strong</button>
+                                <button class="level-btn level-max hidden" data-level="3">Dramatic</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="preset-buttons">
-                        <button class="preset-btn" onclick="applyPreset('silhouette')">Silhouette</button>
-                        <button class="preset-btn" onclick="applyPreset('portrait')">Portrait</button>
-                        <button class="preset-btn" onclick="applyPreset('foggy')">Morning Fog</button>
-                        <button class="preset-btn" onclick="applyPreset('reset')">Reset</button>
+                    <div class="toggle-section">
+                        <h3 class="section-title">Tone & Contrast</h3>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>High Contrast</strong>
+                                <small>Timmons' prints had striking tonal separation</small>
+                            </span>
+                            <div class="level-buttons" data-effect="highcontrast">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Med</button>
+                                <button class="level-btn active" data-level="2">High</button>
+                                <button class="level-btn level-max hidden" data-level="3">Max</button>
+                            </div>
+                        </div>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Crushed Blacks</strong>
+                                <small>Deep shadows give the dramatic silhouette look</small>
+                            </span>
+                            <div class="level-buttons" data-effect="crushedblacks">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Med</button>
+                                <button class="level-btn active" data-level="2">High</button>
+                                <button class="level-btn level-max hidden" data-level="3">Max</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toggle-section">
+                        <h3 class="section-title">Period Authenticity</h3>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Film Grain</strong>
+                                <small>Texture from large-format film stock of the 1930s</small>
+                            </span>
+                            <div class="level-buttons" data-effect="grain">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Fine</button>
+                                <button class="level-btn active" data-level="2">Med</button>
+                                <button class="level-btn level-max hidden" data-level="3">Heavy</button>
+                            </div>
+                        </div>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Vignette</strong>
+                                <small>Lens falloff draws the eye to the subject</small>
+                            </span>
+                            <div class="level-buttons" data-effect="vignette">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Subtle</button>
+                                <button class="level-btn active" data-level="2">Med</button>
+                                <button class="level-btn level-max hidden" data-level="3">Heavy</button>
+                            </div>
+                        </div>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Warm Tone</strong>
+                                <small>Slight sepia warmth of aged silver gelatin prints</small>
+                            </span>
+                            <div class="level-buttons" data-effect="sepia">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Hint</button>
+                                <button class="level-btn active" data-level="2">Warm</button>
+                                <button class="level-btn level-max hidden" data-level="3">Sepia</button>
+                            </div>
+                        </div>
+
+                        <div class="effect-row">
+                            <span class="effect-label">
+                                <strong>Soft Focus</strong>
+                                <small>Pictorialist softness from uncoated portrait lenses</small>
+                            </span>
+                            <div class="level-buttons" data-effect="softness">
+                                <button class="level-btn" data-level="0">Off</button>
+                                <button class="level-btn" data-level="1">Slight</button>
+                                <button class="level-btn active" data-level="2">Soft</button>
+                                <button class="level-btn level-max hidden" data-level="3">Dreamy</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="editor-actions">
                         <button class="action-btn secondary" onclick="retakePhoto()">Retake</button>
-                        <button class="action-btn primary" onclick="sendToPrint()">Send to Print</button>
+                        <button class="action-btn primary" onclick="sendToPrint()">
+                            <span>Send to Print</span>
+                            <small>$3 at front desk</small>
+                        </button>
+                    </div>
+
+                    <div class="debug-buttons">
+                        <button class="debug-toggle-btn" onclick="enableDebugMode()">+ Max</button>
+                        <button class="debug-toggle-btn" onclick="toggleDebugPanel()">⚙ Debug</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Panel -->
+            <div id="debug-panel" class="debug-panel hidden">
+                <div class="debug-header">
+                    <h3>Style Configuration</h3>
+                    <button class="debug-close-btn" onclick="toggleDebugPanel()">×</button>
+                </div>
+                <div class="debug-content">
+                    <div class="debug-preset-select">
+                        <label>Editing Preset:</label>
+                        <select id="debug-preset-selector" onchange="selectDebugPreset()">
+                            <option value="classic">Classic</option>
+                            <option value="silhouette">Silhouette</option>
+                            <option value="foggy">Morning Fog</option>
+                        </select>
+                    </div>
+
+                    <div class="debug-controls">
+                        <div class="debug-control">
+                            <label>Contrast</label>
+                            <input type="range" id="debug-contrast" min="0.5" max="3" step="0.1" oninput="updateDebugValue('contrast')">
+                            <span id="debug-val-contrast">1.4</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Brightness</label>
+                            <input type="range" id="debug-brightness" min="0.3" max="1.5" step="0.05" oninput="updateDebugValue('brightness')">
+                            <span id="debug-val-brightness">0.9</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Shadows</label>
+                            <input type="range" id="debug-shadows" min="0" max="100" step="5" oninput="updateDebugValue('shadows')">
+                            <span id="debug-val-shadows">40</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Highlights</label>
+                            <input type="range" id="debug-highlights" min="0" max="50" step="5" oninput="updateDebugValue('highlights')">
+                            <span id="debug-val-highlights">20</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Grain</label>
+                            <input type="range" id="debug-grain" min="0" max="50" step="2" oninput="updateDebugValue('grain')">
+                            <span id="debug-val-grain">20</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Vignette</label>
+                            <input type="range" id="debug-vignette" min="0" max="100" step="5" oninput="updateDebugValue('vignette')">
+                            <span id="debug-val-vignette">30</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Sepia</label>
+                            <input type="range" id="debug-sepia" min="0" max="30" step="2" oninput="updateDebugValue('sepia')">
+                            <span id="debug-val-sepia">10</span>
+                        </div>
+                        <div class="debug-control">
+                            <label>Blur</label>
+                            <input type="range" id="debug-blur" min="0" max="3" step="0.25" oninput="updateDebugValue('blur')">
+                            <span id="debug-val-blur">0.5</span>
+                        </div>
+                    </div>
+
+                    <div class="debug-actions">
+                        <button class="debug-btn" onclick="applyDebugSettings()">Apply to Preview</button>
+                        <button class="debug-btn" onclick="saveDebugPreset()">Save to Preset</button>
+                        <button class="debug-btn" onclick="exportPresets()">Export All</button>
+                    </div>
+
+                    <div class="debug-export">
+                        <label>Preset Export:</label>
+                        <textarea id="debug-export-text" readonly></textarea>
                     </div>
                 </div>
             </div>

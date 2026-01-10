@@ -13,12 +13,17 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tensorflow-models/body-pix": "^2.2.1",
+    "@tensorflow/tfjs": "^4.11.0",
+    "@upscalerjs/esrgan-medium": "^1.0.0-beta.13",
     "express": "^4.18.2",
-    "three": "0.128.0"
+    "three": "0.128.0",
+    "upscaler": "^1.0.0-beta.19"
   },
   "devDependencies": {
     "happy-dom": "^13.0.0",
     "vite": "^5.0.0",
+    "vite-plugin-commonjs": "^0.10.4",
     "vitest": "^1.0.0"
   }
 }

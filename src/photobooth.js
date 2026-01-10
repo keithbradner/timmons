@@ -3,116 +3,89 @@
  * Creates portraits in the style of William "Dever" Timmons
  */
 
+import '@tensorflow/tfjs'
+import * as bodyPix from '@tensorflow-models/body-pix'
+
 import { setupInactivityTimer } from './inactivity.js'
 import { audioManager } from './audio-manager.js'
 
-// Global state
-let bodyPixModel = null
-let videoStream = null
-let capturedImageData = null
-let processedImageData = null
-let originalWithBackground = null
-
-// Filter settings
-const filterSettings = {
-    contrast: 1.4,
-    brightness: 0.9,
-    shadows: 40,
-    highlights: 20,
-    grain: 20,
-    vignette: 30,
-    sepia: 10,
-    blur: 0.5
-}
-
-// DOM Elements
-const panels = {
-    intro: null,
-    camera: null,
-    processing: null,
-    editor: null,
-    success: null
-}
-
-const elements = {
-    video: null,
-    previewCanvas: null,
-    editorCanvas: null,
-    captureBtn: null,
-    cameraLoading: null,
-    processingStatus: null
-}
+// Import modules
+import * as state from './photobooth/state.js'
+import { applyTimmonsFilters } from './photobooth/filters.js'
+import { createSoftMask } from './photobooth/mask.js'
+import { applyDirectionalLighting } from './photobooth/lighting.js'
+import { upscaleImage } from './photobooth/upscale.js'
+import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
+import * as debug from './photobooth/debug.js'
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', init)
 
 function init() {
-    // Cache DOM elements
-    panels.intro = document.getElementById('panel-intro')
-    panels.camera = document.getElementById('panel-camera')
-    panels.processing = document.getElementById('panel-processing')
-    panels.editor = document.getElementById('panel-editor')
-    panels.success = document.getElementById('panel-success')
-
-    elements.video = document.getElementById('camera-feed')
-    elements.previewCanvas = document.getElementById('preview-canvas')
-    elements.editorCanvas = document.getElementById('editor-canvas')
-    elements.captureBtn = document.getElementById('capture-btn')
-    elements.cameraLoading = document.getElementById('camera-loading')
-    elements.processingStatus = document.getElementById('processing-status')
-
-    // Set up control listeners
-    setupControlListeners()
-
-    // Set up inactivity timer
+    state.initElements()
+    setupLevelButtons()
     setupInactivityTimer(() => {
         window.location.href = '/'
     })
-
-    // Expose global functions
-    window.startPhotobooth = startPhotobooth
-    window.capturePhoto = capturePhoto
-    window.retakePhoto = retakePhoto
-    window.sendToPrint = sendToPrint
-    window.startOver = startOver
-    window.applyPreset = applyPreset
 }
 
-function setupControlListeners() {
-    const controls = [
-        { id: 'ctrl-contrast', key: 'contrast', format: v => `${Math.round(v * 100)}%` },
-        { id: 'ctrl-brightness', key: 'brightness', format: v => `${Math.round(v * 100)}%` },
-        { id: 'ctrl-shadows', key: 'shadows', format: v => v },
-        { id: 'ctrl-highlights', key: 'highlights', format: v => v },
-        { id: 'ctrl-grain', key: 'grain', format: v => v },
-        { id: 'ctrl-vignette', key: 'vignette', format: v => `${v}%` },
-        { id: 'ctrl-sepia', key: 'sepia', format: v => `${v}%` },
-        { id: 'ctrl-blur', key: 'blur', format: v => `${v}px` }
-    ]
+function setupLevelButtons() {
+    // Set up click handlers for all level buttons
+    document.querySelectorAll('.level-buttons').forEach(container => {
+        const effect = container.dataset.effect
+        container.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const level = parseInt(btn.dataset.level)
+                setEffectLevel(effect, level)
+            })
+        })
+    })
+}
 
-    controls.forEach(ctrl => {
-        const input = document.getElementById(ctrl.id)
-        const valueDisplay = document.getElementById(`val-${ctrl.key}`)
+async function setEffectLevel(effectName, level) {
+    state.effectLevels[effectName] = level
 
-        if (input) {
-            input.addEventListener('input', () => {
-                filterSettings[ctrl.key] = parseFloat(input.value)
-                if (valueDisplay) {
-                    valueDisplay.textContent = ctrl.format(filterSettings[ctrl.key])
-                }
-                updatePreview()
+    // Update button states
+    const container = document.querySelector(`.level-buttons[data-effect="${effectName}"]`)
+    if (container) {
+        container.querySelectorAll('.level-btn').forEach(btn => {
+            const btnLevel = parseInt(btn.dataset.level)
+            btn.classList.toggle('active', btnLevel === level)
+        })
+    }
+
+    // Show spinner for heavy operations
+    const heavyEffects = ['silhouette', 'lighting']
+    if (heavyEffects.includes(effectName)) {
+        showEditorProcessing('Applying effect...')
+        await yieldToMain()
+    }
+
+    applyLevelSettings()
+    updatePreview()
+
+    hideEditorProcessing()
+}
+
+function syncLevelButtons() {
+    Object.keys(state.effectLevels).forEach(effect => {
+        const container = document.querySelector(`.level-buttons[data-effect="${effect}"]`)
+        if (container) {
+            const level = state.effectLevels[effect]
+            container.querySelectorAll('.level-btn').forEach(btn => {
+                const btnLevel = parseInt(btn.dataset.level)
+                btn.classList.toggle('active', btnLevel === level)
             })
         }
     })
 }
 
-function showPanel(panelName) {
-    Object.values(panels).forEach(panel => {
-        if (panel) panel.classList.add('hidden')
+function enableDebugMode() {
+    state.setDebugMode(true)
+    // Show all max buttons
+    document.querySelectorAll('.level-max').forEach(btn => {
+        btn.classList.remove('hidden')
     })
-    if (panels[panelName]) {
-        panels[panelName].classList.remove('hidden')
-    }
 }
 
 // ==========================================
@@ -120,57 +93,93 @@ function showPanel(panelName) {
 // ==========================================
 
 async function startPhotobooth() {
-    showPanel('camera')
+    state.showPanel('camera')
     await initCamera()
     await loadBodyPixModel()
 }
 
 async function initCamera() {
     try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                width: { ideal: 1280 },
+                width: { ideal: 768 },
                 height: { ideal: 960 },
+                aspectRatio: { ideal: 4/5 },
                 facingMode: 'user'
             },
             audio: false
         })
 
-        elements.video.srcObject = videoStream
-        await elements.video.play()
+        state.setVideoStream(stream)
+        state.elements.video.srcObject = stream
+        await state.elements.video.play()
 
-        elements.cameraLoading.classList.add('hidden')
-        elements.captureBtn.disabled = false
-
+        state.elements.cameraLoading.classList.add('hidden')
+        state.elements.captureBtn.disabled = false
     } catch (error) {
         console.error('Camera error:', error)
-        elements.cameraLoading.textContent = 'Camera access denied. Please enable camera permissions.'
+        state.elements.cameraLoading.textContent = 'Camera access denied. Please enable camera permissions.'
     }
 }
 
 async function loadBodyPixModel() {
-    if (bodyPixModel) return
+    if (state.bodyPixModel) return
 
     try {
-        // Load BodyPix model with medium accuracy for balance of speed and quality
-        bodyPixModel = await bodyPix.load({
-            architecture: 'MobileNetV1',
+        const model = await bodyPix.load({
+            architecture: 'ResNet50',
             outputStride: 16,
-            multiplier: 0.75,
-            quantBytes: 2
+            quantBytes: 4
         })
+        state.setBodyPixModel(model)
         console.log('BodyPix model loaded')
     } catch (error) {
         console.error('Failed to load BodyPix:', error)
-        // Continue without background removal
     }
 }
 
 function stopCamera() {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop())
-        videoStream = null
+    if (state.videoStream) {
+        state.videoStream.getTracks().forEach(track => track.stop())
+        state.setVideoStream(null)
     }
+}
+
+// ==========================================
+// COUNTDOWN AND CAPTURE
+// ==========================================
+
+function startCountdown() {
+    if (!state.elements.video.videoWidth) return
+
+    state.elements.captureBtn.classList.add('counting')
+    state.elements.countdownOverlay.classList.remove('hidden')
+
+    let count = 3
+    state.elements.countdownNumber.textContent = count
+    state.elements.captureBtnText.textContent = count
+
+    const countdownInterval = setInterval(() => {
+        count--
+
+        if (count > 0) {
+            state.elements.countdownNumber.textContent = count
+            state.elements.captureBtnText.textContent = count
+            state.elements.countdownNumber.style.animation = 'none'
+            void state.elements.countdownNumber.offsetWidth
+            state.elements.countdownNumber.style.animation = 'countdownPop 1s ease-out'
+        } else {
+            clearInterval(countdownInterval)
+            state.elements.countdownOverlay.classList.add('hidden')
+            state.elements.captureBtn.classList.remove('counting')
+            state.elements.captureBtnText.textContent = '3'
+
+            state.elements.video.pause()
+            showCaptureProcessing('Hold still...')
+
+            setTimeout(() => capturePhoto(), 50)
+        }
+    }, 1000)
 }
 
 // ==========================================
@@ -178,106 +187,93 @@ function stopCamera() {
 // ==========================================
 
 async function capturePhoto() {
-    if (!elements.video.videoWidth) return
+    if (!state.elements.video.videoWidth) return
 
-    showPanel('processing')
-    elements.processingStatus.textContent = 'Capturing image...'
+    // Disable button and show processing
+    state.elements.captureBtn.disabled = true
+    showCaptureProcessing('Capturing...')
 
-    // Create canvas at video resolution
     const canvas = document.createElement('canvas')
-    canvas.width = elements.video.videoWidth
-    canvas.height = elements.video.videoHeight
+    canvas.width = state.elements.video.videoWidth
+    canvas.height = state.elements.video.videoHeight
     const ctx = canvas.getContext('2d')
 
-    // Draw video frame (flipped horizontally to match mirror view)
     ctx.translate(canvas.width, 0)
     ctx.scale(-1, 1)
-    ctx.drawImage(elements.video, 0, 0)
+    ctx.drawImage(state.elements.video, 0, 0)
     ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-    // Store original with background
-    originalWithBackground = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const width = canvas.width
+    const height = canvas.height
+    const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Process with background removal
-    elements.processingStatus.textContent = 'Removing background...'
-
+    // Run segmentation
+    let segMask = null
     try {
-        if (bodyPixModel) {
-            await removeBackground(canvas, ctx)
+        if (state.bodyPixModel) {
+            showCaptureProcessing('Detecting subject...')
+            await yieldToMain()
+            const segmentation = await state.bodyPixModel.segmentPerson(canvas, {
+                flipHorizontal: false,
+                internalResolution: 'medium',
+                segmentationThreshold: 0.6
+            })
+
+            showCaptureProcessing('Refining edges...')
+            await yieldToMain()
+            segMask = createSoftMask(segmentation.data, width, height)
         }
     } catch (error) {
-        console.error('Background removal failed:', error)
-        // Continue with original image
+        console.error('Segmentation failed:', error)
     }
+    state.setSegmentationMask(segMask)
 
-    // Store the captured image
-    capturedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    // Store the original
+    state.setOriginalWithBackground(originalImage)
+    state.setImageOriginal(new ImageData(
+        new Uint8ClampedArray(originalImage.data),
+        width,
+        height
+    ))
 
-    elements.processingStatus.textContent = 'Applying Timmons style...'
+    // Store the base image - all effects are applied dynamically now
+    state.setCapturedImageData(state.imageOriginal)
+    showCaptureProcessing('Applying style...')
 
-    // Stop camera
     stopCamera()
-
-    // Initialize editor
+    hideCaptureProcessing()
     await initEditor()
 }
 
-async function removeBackground(canvas, ctx) {
-    // Get segmentation mask
-    const segmentation = await bodyPixModel.segmentPerson(canvas, {
-        flipHorizontal: false,
-        internalResolution: 'medium',
-        segmentationThreshold: 0.7
-    })
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const pixels = imageData.data
-
-    // Apply mask - set background to black
-    for (let i = 0; i < segmentation.data.length; i++) {
-        const pixelIndex = i * 4
-        if (segmentation.data[i] === 0) {
-            // Background pixel - set to black
-            pixels[pixelIndex] = 0     // R
-            pixels[pixelIndex + 1] = 0 // G
-            pixels[pixelIndex + 2] = 0 // B
-            // Keep alpha at 255
-        }
+function showCaptureProcessing(message) {
+    if (state.elements.captureProcessingOverlay) {
+        state.elements.captureProcessingOverlay.classList.remove('hidden')
     }
-
-    // Smooth the edges slightly
-    smoothEdges(pixels, canvas.width, canvas.height, segmentation.data)
-
-    ctx.putImageData(imageData, 0, 0)
+    if (state.elements.captureProcessingText) {
+        state.elements.captureProcessingText.textContent = message
+    }
 }
 
-function smoothEdges(pixels, width, height, mask) {
-    // Simple edge smoothing by checking neighbors
-    const edgePixels = []
-
-    for (let y = 1; y < height - 1; y++) {
-        for (let x = 1; x < width - 1; x++) {
-            const i = y * width + x
-            if (mask[i] === 1) {
-                // Check if this is an edge pixel (has background neighbor)
-                const hasBackgroundNeighbor =
-                    mask[i - 1] === 0 || mask[i + 1] === 0 ||
-                    mask[i - width] === 0 || mask[i + width] === 0
-
-                if (hasBackgroundNeighbor) {
-                    edgePixels.push({ x, y, i })
-                }
-            }
-        }
+function hideCaptureProcessing() {
+    if (state.elements.captureProcessingOverlay) {
+        state.elements.captureProcessingOverlay.classList.add('hidden')
     }
+}
 
-    // Slightly darken edge pixels for softer transition
-    edgePixels.forEach(({ i }) => {
-        const pixelIndex = i * 4
-        pixels[pixelIndex] = Math.floor(pixels[pixelIndex] * 0.7)
-        pixels[pixelIndex + 1] = Math.floor(pixels[pixelIndex + 1] * 0.7)
-        pixels[pixelIndex + 2] = Math.floor(pixels[pixelIndex + 2] * 0.7)
-    })
+function showEditorProcessing(message) {
+    const overlay = document.getElementById('editor-processing')
+    const text = document.getElementById('editor-processing-text')
+    if (overlay) overlay.classList.remove('hidden')
+    if (text) text.textContent = message || 'Applying...'
+}
+
+function hideEditorProcessing() {
+    const overlay = document.getElementById('editor-processing')
+    if (overlay) overlay.classList.add('hidden')
+}
+
+function yieldToMain() {
+    return new Promise(resolve => setTimeout(resolve, 0))
 }
 
 // ==========================================
@@ -285,253 +281,103 @@ function smoothEdges(pixels, width, height, mask) {
 // ==========================================
 
 async function initEditor() {
-    // Set up editor canvas
-    elements.editorCanvas.width = capturedImageData.width
-    elements.editorCanvas.height = capturedImageData.height
+    state.elements.editorCanvas.width = state.capturedImageData.width
+    state.elements.editorCanvas.height = state.capturedImageData.height
 
-    // Reset controls to default values
-    resetControlValues()
-
-    // Apply initial filters
+    syncLevelButtons()
+    applyLevelSettings()
     updatePreview()
-
-    // Show editor
-    showPanel('editor')
-}
-
-function resetControlValues() {
-    filterSettings.contrast = 1.4
-    filterSettings.brightness = 0.9
-    filterSettings.shadows = 40
-    filterSettings.highlights = 20
-    filterSettings.grain = 20
-    filterSettings.vignette = 30
-    filterSettings.sepia = 10
-    filterSettings.blur = 0.5
-
-    // Update UI
-    const controls = [
-        { id: 'ctrl-contrast', key: 'contrast', format: v => `${Math.round(v * 100)}%` },
-        { id: 'ctrl-brightness', key: 'brightness', format: v => `${Math.round(v * 100)}%` },
-        { id: 'ctrl-shadows', key: 'shadows', format: v => v },
-        { id: 'ctrl-highlights', key: 'highlights', format: v => v },
-        { id: 'ctrl-grain', key: 'grain', format: v => v },
-        { id: 'ctrl-vignette', key: 'vignette', format: v => `${v}%` },
-        { id: 'ctrl-sepia', key: 'sepia', format: v => `${v}%` },
-        { id: 'ctrl-blur', key: 'blur', format: v => `${v}px` }
-    ]
-
-    controls.forEach(ctrl => {
-        const input = document.getElementById(ctrl.id)
-        const valueDisplay = document.getElementById(`val-${ctrl.key}`)
-        if (input) input.value = filterSettings[ctrl.key]
-        if (valueDisplay) valueDisplay.textContent = ctrl.format(filterSettings[ctrl.key])
-    })
+    state.showPanel('editor')
 }
 
 function updatePreview() {
-    if (!capturedImageData) return
+    if (!state.imageOriginal) return
 
-    const ctx = elements.editorCanvas.getContext('2d')
+    // Get the source image (cropped or full)
+    let sourceImage = state.imageOriginal
+    let sourceMask = state.segmentationMask
 
-    // Create working copy
+    if (state.isCropped && state.subjectBounds) {
+        sourceImage = cropImageData(state.imageOriginal, state.subjectBounds)
+        // Also crop the mask
+        if (state.segmentationMask) {
+            sourceMask = cropMask(state.segmentationMask, state.imageOriginal.width, state.subjectBounds)
+        }
+    }
+
+    // Update canvas size if needed
+    if (state.elements.editorCanvas.width !== sourceImage.width ||
+        state.elements.editorCanvas.height !== sourceImage.height) {
+        state.elements.editorCanvas.width = sourceImage.width
+        state.elements.editorCanvas.height = sourceImage.height
+    }
+
+    const ctx = state.elements.editorCanvas.getContext('2d')
     const workingData = new ImageData(
-        new Uint8ClampedArray(capturedImageData.data),
-        capturedImageData.width,
-        capturedImageData.height
+        new Uint8ClampedArray(sourceImage.data),
+        sourceImage.width,
+        sourceImage.height
     )
 
-    // Apply filter pipeline
-    applyTimmonsFilters(workingData)
+    // Apply lighting if enabled (before other filters)
+    if (state.filterSettings.lightBoost > 0 && sourceMask) {
+        applyDirectionalLighting(
+            workingData.data,
+            workingData.width,
+            workingData.height,
+            sourceMask,
+            state.filterSettings.lightBoost
+        )
+    }
 
-    // Store processed data
-    processedImageData = workingData
+    // Apply filters (with mask for subject-only effects when background is being handled)
+    const useMaskForFilters = state.filterSettings.backgroundDim > 0 && sourceMask
+    applyTimmonsFilters(workingData, useMaskForFilters ? sourceMask : null)
 
-    // Draw to canvas
+    state.setProcessedImageData(workingData)
     ctx.putImageData(workingData, 0, 0)
 
-    // Apply CSS-based effects that can't be done per-pixel
-    applyCanvasEffects(ctx)
-}
-
-function applyTimmonsFilters(imageData) {
-    const pixels = imageData.data
-    const width = imageData.width
-    const height = imageData.height
-
-    // Pre-calculate vignette map
-    const vignetteMap = createVignetteMap(width, height, filterSettings.vignette)
-
-    for (let i = 0; i < pixels.length; i += 4) {
-        let r = pixels[i]
-        let g = pixels[i + 1]
-        let b = pixels[i + 2]
-
-        // 1. Convert to grayscale using luminance formula
-        let gray = 0.299 * r + 0.587 * g + 0.114 * b
-
-        // 2. Apply brightness
-        gray = gray * filterSettings.brightness
-
-        // 3. Apply contrast (S-curve approximation)
-        gray = applyContrast(gray, filterSettings.contrast)
-
-        // 4. Crush shadows
-        gray = crushShadows(gray, filterSettings.shadows)
-
-        // 5. Lift highlights
-        gray = liftHighlights(gray, filterSettings.highlights)
-
-        // 6. Apply vignette
-        const pixelIndex = i / 4
-        const x = pixelIndex % width
-        const y = Math.floor(pixelIndex / width)
-        const vignetteValue = vignetteMap[y * width + x]
-        gray = gray * vignetteValue
-
-        // 7. Apply sepia toning (subtle warm tone)
-        let finalR = gray
-        let finalG = gray
-        let finalB = gray
-
-        if (filterSettings.sepia > 0) {
-            const sepiaAmount = filterSettings.sepia / 100
-            finalR = gray + (gray * 0.15 * sepiaAmount)  // Slight red/orange boost
-            finalG = gray + (gray * 0.05 * sepiaAmount)  // Slight green boost
-            finalB = gray - (gray * 0.1 * sepiaAmount)   // Reduce blue
-        }
-
-        // 8. Add film grain
-        if (filterSettings.grain > 0) {
-            const grainAmount = (Math.random() - 0.5) * filterSettings.grain
-            finalR += grainAmount
-            finalG += grainAmount
-            finalB += grainAmount
-        }
-
-        // Clamp values
-        pixels[i] = clamp(finalR, 0, 255)
-        pixels[i + 1] = clamp(finalG, 0, 255)
-        pixels[i + 2] = clamp(finalB, 0, 255)
-    }
-}
-
-function applyContrast(value, contrast) {
-    // Apply contrast around midpoint (128)
-    const factor = (259 * (contrast * 255 - 128)) / (255 * (259 - (contrast * 255 - 128)))
-    return clamp(factor * (value - 128) + 128, 0, 255)
-}
-
-function crushShadows(value, amount) {
-    // Crush shadows: values below threshold get pushed toward black
-    const threshold = 128
-    if (value < threshold) {
-        const crushFactor = 1 - (amount / 100)
-        return value * crushFactor
-    }
-    return value
-}
-
-function liftHighlights(value, amount) {
-    // Lift highlights: values above threshold get pushed toward white
-    const threshold = 180
-    if (value > threshold) {
-        const liftAmount = (amount / 100) * (255 - value) * 0.5
-        return value + liftAmount
-    }
-    return value
-}
-
-function createVignetteMap(width, height, intensity) {
-    const map = new Float32Array(width * height)
-    const centerX = width / 2
-    const centerY = height / 2
-    const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY)
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const dx = x - centerX
-            const dy = y - centerY
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            const normalizedDistance = distance / maxDistance
-
-            // Smooth vignette falloff
-            const vignette = 1 - (Math.pow(normalizedDistance, 2) * (intensity / 100))
-            map[y * width + x] = Math.max(0.3, vignette) // Don't go completely black
-        }
-    }
-
-    return map
-}
-
-function applyCanvasEffects(ctx) {
-    // Apply slight blur for that analog softness
-    if (filterSettings.blur > 0) {
-        ctx.filter = `blur(${filterSettings.blur}px)`
-        ctx.drawImage(elements.editorCanvas, 0, 0)
+    if (state.filterSettings.blur > 0) {
+        ctx.filter = `blur(${state.filterSettings.blur}px)`
+        ctx.drawImage(state.elements.editorCanvas, 0, 0)
         ctx.filter = 'none'
     }
 }
 
-function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value))
+// Helper to crop mask to match cropped image
+function cropMask(mask, originalWidth, bounds) {
+    const croppedMask = new Float32Array(bounds.width * bounds.height)
+    for (let y = 0; y < bounds.height; y++) {
+        for (let x = 0; x < bounds.width; x++) {
+            const srcX = bounds.x + x
+            const srcY = bounds.y + y
+            const srcIndex = srcY * originalWidth + srcX
+            const dstIndex = y * bounds.width + x
+            croppedMask[dstIndex] = mask[srcIndex] || 0
+        }
+    }
+    return croppedMask
 }
 
 // ==========================================
-// PRESETS
+// LEVEL-BASED EFFECTS
 // ==========================================
 
-function applyPreset(presetName) {
-    switch (presetName) {
-        case 'silhouette':
-            filterSettings.contrast = 2.2
-            filterSettings.brightness = 0.7
-            filterSettings.shadows = 80
-            filterSettings.highlights = 10
-            filterSettings.grain = 15
-            filterSettings.vignette = 40
-            filterSettings.sepia = 5
-            filterSettings.blur = 0
-            break
+function applyLevelSettings() {
+    // Start with base values
+    Object.assign(state.filterSettings, state.baseValues)
 
-        case 'portrait':
-            filterSettings.contrast = 1.3
-            filterSettings.brightness = 1.0
-            filterSettings.shadows = 25
-            filterSettings.highlights = 25
-            filterSettings.grain = 20
-            filterSettings.vignette = 25
-            filterSettings.sepia = 12
-            filterSettings.blur = 0.5
-            break
-
-        case 'foggy':
-            filterSettings.contrast = 1.1
-            filterSettings.brightness = 1.1
-            filterSettings.shadows = 15
-            filterSettings.highlights = 35
-            filterSettings.grain = 25
-            filterSettings.vignette = 20
-            filterSettings.sepia = 8
-            filterSettings.blur = 1.5
-            break
-
-        case 'reset':
-        default:
-            filterSettings.contrast = 1.4
-            filterSettings.brightness = 0.9
-            filterSettings.shadows = 40
-            filterSettings.highlights = 20
-            filterSettings.grain = 20
-            filterSettings.vignette = 30
-            filterSettings.sepia = 10
-            filterSettings.blur = 0.5
-            break
-    }
-
-    // Update UI controls
-    resetControlValues()
-    updatePreview()
+    // Apply ALL effect values based on levels (including silhouette and lighting)
+    const effects = ['silhouette', 'lighting', 'highcontrast', 'crushedblacks', 'grain', 'vignette', 'sepia', 'softness']
+    effects.forEach(effect => {
+        const level = state.effectLevels[effect]
+        if (level > 0 && state.effectValues[effect]) {
+            Object.keys(state.effectValues[effect]).forEach(param => {
+                const values = state.effectValues[effect][param]
+                state.filterSettings[param] = values[level]
+            })
+        }
+    })
 }
 
 // ==========================================
@@ -539,58 +385,74 @@ function applyPreset(presetName) {
 // ==========================================
 
 function retakePhoto() {
-    capturedImageData = null
-    processedImageData = null
-    originalWithBackground = null
-    showPanel('camera')
+    state.resetImageState()
+    state.showPanel('camera')
     initCamera()
 }
 
 async function sendToPrint() {
-    if (!processedImageData) return
+    if (!state.processedImageData) return
 
-    // Get final image as data URL
+    // Show processing overlay
+    state.showPanel('processing')
+    const processingStatus = document.getElementById('processing-status')
+
     const canvas = document.createElement('canvas')
-    canvas.width = processedImageData.width
-    canvas.height = processedImageData.height
+    canvas.width = state.processedImageData.width
+    canvas.height = state.processedImageData.height
     const ctx = canvas.getContext('2d')
-    ctx.putImageData(processedImageData, 0, 0)
+    ctx.putImageData(state.processedImageData, 0, 0)
 
-    // Apply blur if needed
-    if (filterSettings.blur > 0) {
-        ctx.filter = `blur(${filterSettings.blur}px)`
+    if (state.filterSettings.blur > 0) {
+        ctx.filter = `blur(${state.filterSettings.blur}px)`
         ctx.drawImage(canvas, 0, 0)
         ctx.filter = 'none'
     }
 
+    // Get the current image data for upscaling
+    let finalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+    // Upscale for print quality
+    if (processingStatus) processingStatus.textContent = 'Upscaling for print...'
+    const upscaledImage = await upscaleImage(finalImageData, (progress) => {
+        if (processingStatus) {
+            processingStatus.textContent = `Upscaling... ${Math.round(progress * 100)}%`
+        }
+    })
+
+    if (upscaledImage) {
+        // Create new canvas with upscaled dimensions
+        canvas.width = upscaledImage.width
+        canvas.height = upscaledImage.height
+        ctx.putImageData(upscaledImage, 0, 0)
+        console.log(`Upscaled for print: ${finalImageData.width}x${finalImageData.height} -> ${upscaledImage.width}x${upscaledImage.height}`)
+    }
+
+    if (processingStatus) processingStatus.textContent = 'Sending to print...'
+
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95)
 
     try {
-        // Send to print queue server
         const response = await fetch('/api/print-queue', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 image: imageDataUrl,
                 timestamp: new Date().toISOString(),
-                settings: { ...filterSettings }
+                settings: { ...state.filterSettings }
             })
         })
 
         if (response.ok) {
-            showPanel('success')
+            state.showPanel('success')
         } else {
-            // Fallback: download the image
             downloadImage(imageDataUrl)
-            showPanel('success')
+            state.showPanel('success')
         }
     } catch (error) {
         console.error('Failed to send to print queue:', error)
-        // Fallback: download the image
         downloadImage(imageDataUrl)
-        showPanel('success')
+        state.showPanel('success')
     }
 }
 
@@ -602,8 +464,225 @@ function downloadImage(dataUrl) {
 }
 
 function startOver() {
-    capturedImageData = null
-    processedImageData = null
-    originalWithBackground = null
-    showPanel('intro')
+    state.resetImageState()
+    state.showPanel('intro')
 }
+
+async function cropToSubject() {
+    showEditorProcessing('Framing subject...')
+    await yieldToMain()
+    doCropToSubject(applyLevelSettings, updatePreview)
+    hideEditorProcessing()
+}
+
+async function applyPreset(presetName) {
+    showEditorProcessing('Applying preset...')
+    await yieldToMain()
+    debug.applyPreset(presetName, updatePreview)
+    hideEditorProcessing()
+}
+
+// ==========================================
+// MANUAL CROP
+// ==========================================
+
+let manualCropState = {
+    active: false,
+    dragging: false,
+    dragType: null, // 'move' or 'nw', 'ne', 'sw', 'se'
+    startX: 0,
+    startY: 0,
+    box: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 } // Normalized 0-1
+}
+
+function openManualCrop() {
+    const overlay = document.getElementById('crop-overlay')
+    if (!overlay) return
+
+    // Reset to uncropped state first
+    if (state.isCropped) {
+        state.setIsCropped(false)
+        state.setSubjectBounds(null)
+        updatePreview()
+    }
+
+    manualCropState.active = true
+    manualCropState.box = { x: 0.1, y: 0.1, width: 0.8, height: 0.8 }
+    overlay.classList.remove('hidden')
+    updateCropOverlay()
+    setupCropListeners()
+}
+
+function updateCropOverlay() {
+    const preview = document.querySelector('.editor-preview')
+    const cropBox = document.getElementById('crop-box')
+    if (!preview || !cropBox) return
+
+    const rect = preview.getBoundingClientRect()
+    const box = manualCropState.box
+
+    // Calculate pixel positions
+    const left = box.x * rect.width
+    const top = box.y * rect.height
+    const width = box.width * rect.width
+    const height = box.height * rect.height
+
+    cropBox.style.left = `${left}px`
+    cropBox.style.top = `${top}px`
+    cropBox.style.width = `${width}px`
+    cropBox.style.height = `${height}px`
+
+    // Update darkened regions
+    document.querySelector('.crop-top').style.height = `${top}px`
+    document.querySelector('.crop-bottom').style.height = `${rect.height - top - height}px`
+    document.querySelector('.crop-bottom').style.top = `${top + height}px`
+    document.querySelector('.crop-left').style.top = `${top}px`
+    document.querySelector('.crop-left').style.width = `${left}px`
+    document.querySelector('.crop-left').style.height = `${height}px`
+    document.querySelector('.crop-right').style.top = `${top}px`
+    document.querySelector('.crop-right').style.left = `${left + width}px`
+    document.querySelector('.crop-right').style.width = `${rect.width - left - width}px`
+    document.querySelector('.crop-right').style.height = `${height}px`
+}
+
+function setupCropListeners() {
+    const overlay = document.getElementById('crop-overlay')
+    const cropBox = document.getElementById('crop-box')
+    if (!overlay || !cropBox) return
+
+    const onMouseDown = (e) => {
+        e.preventDefault()
+        const handle = e.target.dataset.handle
+        manualCropState.dragging = true
+        manualCropState.dragType = handle || 'move'
+        manualCropState.startX = e.clientX
+        manualCropState.startY = e.clientY
+    }
+
+    const onMouseMove = (e) => {
+        if (!manualCropState.dragging) return
+
+        const preview = document.querySelector('.editor-preview')
+        const rect = preview.getBoundingClientRect()
+
+        const dx = (e.clientX - manualCropState.startX) / rect.width
+        const dy = (e.clientY - manualCropState.startY) / rect.height
+
+        const box = manualCropState.box
+
+        if (manualCropState.dragType === 'move') {
+            box.x = Math.max(0, Math.min(1 - box.width, box.x + dx))
+            box.y = Math.max(0, Math.min(1 - box.height, box.y + dy))
+        } else {
+            // Handle resize with aspect ratio constraint (4:5)
+            const aspect = 4 / 5
+
+            if (manualCropState.dragType.includes('e')) {
+                const newWidth = Math.max(0.1, Math.min(1 - box.x, box.width + dx))
+                box.width = newWidth
+                box.height = newWidth / aspect
+            }
+            if (manualCropState.dragType.includes('w')) {
+                const newWidth = Math.max(0.1, box.width - dx)
+                const newX = box.x + (box.width - newWidth)
+                if (newX >= 0) {
+                    box.x = newX
+                    box.width = newWidth
+                    box.height = newWidth / aspect
+                }
+            }
+            if (manualCropState.dragType.includes('s')) {
+                const newHeight = Math.max(0.1, Math.min(1 - box.y, box.height + dy))
+                box.height = newHeight
+                box.width = newHeight * aspect
+            }
+            if (manualCropState.dragType.includes('n')) {
+                const newHeight = Math.max(0.1, box.height - dy)
+                const newY = box.y + (box.height - newHeight)
+                if (newY >= 0) {
+                    box.y = newY
+                    box.height = newHeight
+                    box.width = newHeight * aspect
+                }
+            }
+
+            // Clamp to bounds
+            if (box.x + box.width > 1) box.width = 1 - box.x
+            if (box.y + box.height > 1) box.height = 1 - box.y
+        }
+
+        manualCropState.startX = e.clientX
+        manualCropState.startY = e.clientY
+        updateCropOverlay()
+    }
+
+    const onMouseUp = () => {
+        manualCropState.dragging = false
+    }
+
+    cropBox.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+
+    // Store cleanup function
+    overlay._cleanup = () => {
+        cropBox.removeEventListener('mousedown', onMouseDown)
+        document.removeEventListener('mousemove', onMouseMove)
+        document.removeEventListener('mouseup', onMouseUp)
+    }
+}
+
+async function applyCrop() {
+    const overlay = document.getElementById('crop-overlay')
+    if (overlay._cleanup) overlay._cleanup()
+    overlay.classList.add('hidden')
+
+    showEditorProcessing('Applying crop...')
+    await yieldToMain()
+
+    const box = manualCropState.box
+    const imgWidth = state.imageOriginal.width
+    const imgHeight = state.imageOriginal.height
+
+    state.setSubjectBounds({
+        x: Math.round(box.x * imgWidth),
+        y: Math.round(box.y * imgHeight),
+        width: Math.round(box.width * imgWidth),
+        height: Math.round(box.height * imgHeight)
+    })
+    state.setIsCropped(true)
+
+    manualCropState.active = false
+    updatePreview()
+    hideEditorProcessing()
+}
+
+function cancelCrop() {
+    const overlay = document.getElementById('crop-overlay')
+    if (overlay._cleanup) overlay._cleanup()
+    overlay.classList.add('hidden')
+    manualCropState.active = false
+}
+
+// ==========================================
+// WINDOW EXPORTS
+// ==========================================
+
+window.startPhotobooth = startPhotobooth
+window.startCountdown = startCountdown
+window.capturePhoto = capturePhoto
+window.retakePhoto = retakePhoto
+window.sendToPrint = sendToPrint
+window.startOver = startOver
+window.applyPreset = applyPreset
+window.enableDebugMode = enableDebugMode
+window.cropToSubject = cropToSubject
+window.openManualCrop = openManualCrop
+window.applyCrop = applyCrop
+window.cancelCrop = cancelCrop
+window.toggleDebugPanel = debug.toggleDebugPanel
+window.selectDebugPreset = debug.selectDebugPreset
+window.updateDebugValue = debug.updateDebugValue
+window.applyDebugSettings = () => debug.applyDebugSettings(updatePreview)
+window.saveDebugPreset = () => debug.saveDebugPreset(applyPreset, updatePreview)
+window.exportPresets = debug.exportPresets

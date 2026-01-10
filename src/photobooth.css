@@ -1,4 +1,4 @@
-/* Photobooth Page Styles */
+/* Photobooth Page Styles - Optimized for 1080x1920 Portrait Display */
 
 body {
     margin: 0;
@@ -47,15 +47,17 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .global-back-btn {
     position: fixed;
-    left: 30px;
-    top: 30px;
-    padding: 12px 20px;
+    left: 24px;
+    top: 24px;
+    padding: 14px 24px;
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.9);
     background: rgba(0, 0, 0, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -95,14 +97,14 @@ body {
    ========================================== */
 
 .intro-panel {
-    padding: 50px 40px;
-    max-width: 90%;
-    width: 700px;
+    padding: 60px 50px;
+    width: 90%;
+    max-width: 800px;
 }
 
 .intro-header h1 {
-    font-size: 3rem;
-    margin: 0 0 15px 0;
+    font-size: 3.5rem;
+    margin: 0 0 20px 0;
     color: #fff;
     letter-spacing: 1px;
     font-weight: 400;
@@ -111,40 +113,40 @@ body {
 
 .intro-subtitle {
     font-family: 'Roboto Mono', monospace;
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.8);
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    margin: 0 0 30px 0;
+    margin: 0 0 40px 0;
 }
 
 .intro-content {
     text-align: left;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .intro-content p {
     font-family: 'Roboto Mono', monospace;
-    font-size: 1rem;
-    line-height: 1.7;
+    font-size: 1.1rem;
+    line-height: 1.8;
     color: rgba(255, 255, 255, 0.9);
-    margin: 0 0 20px 0;
+    margin: 0 0 25px 0;
 }
 
 .style-points {
     list-style: none;
     padding: 0;
-    margin: 0 0 25px 0;
+    margin: 0 0 30px 0;
 }
 
 .style-points li {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     color: rgba(255, 255, 255, 0.85);
-    padding: 12px 0;
+    padding: 16px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
-    padding-left: 20px;
+    padding-left: 24px;
 }
 
 .style-points li::before {
@@ -153,8 +155,8 @@ body {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     background: rgba(255, 255, 255, 0.6);
     border-radius: 50%;
 }
@@ -173,13 +175,13 @@ body {
     background: transparent;
     color: #fff;
     border: 2px solid rgba(255, 255, 255, 0.4);
-    padding: 20px 60px;
+    padding: 24px 80px;
     font-family: 'Roboto Mono', monospace;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 700;
     cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
     transition: all 0.3s ease;
     margin-top: 20px;
 }
@@ -195,36 +197,36 @@ body {
    ========================================== */
 
 .camera-panel {
-    padding: 30px;
-    max-width: 95%;
-    width: 800px;
+    padding: 40px;
+    width: 90%;
+    max-width: 700px;
 }
 
 .camera-header h2 {
-    font-size: 2rem;
-    margin: 0 0 10px 0;
+    font-size: 2.5rem;
+    margin: 0 0 12px 0;
     color: #fff;
     font-weight: 400;
 }
 
 .camera-header p {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.7);
-    margin: 0 0 25px 0;
+    margin: 0 0 30px 0;
     text-align: center;
 }
 
 .camera-container {
     position: relative;
     width: 100%;
-    max-width: 640px;
+    max-width: 480px;
     margin: 0 auto;
     background: #111;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     overflow: hidden;
-    aspect-ratio: 4/3;
+    aspect-ratio: 4/5;
 }
 
 #camera-feed,
@@ -247,21 +249,21 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.6);
 }
 
 .camera-controls {
-    margin-top: 30px;
+    margin-top: 40px;
 }
 
 .capture-btn {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     background: transparent;
-    border: 4px solid rgba(255, 255, 255, 0.8);
-    padding: 8px;
+    border: 5px solid rgba(255, 255, 255, 0.8);
+    padding: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -282,6 +284,16 @@ body {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.capture-btn-text {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #000;
 }
 
 .capture-btn:hover:not(:disabled) .capture-btn-inner {
@@ -293,13 +305,105 @@ body {
     background: rgba(255, 255, 255, 0.7);
 }
 
+.capture-btn.counting {
+    pointer-events: none;
+}
+
+.capture-btn.counting .capture-btn-inner {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+}
+
 .capture-hint {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     color: rgba(255, 255, 255, 0.5);
-    margin: 15px 0 0 0;
+    margin: 20px 0 0 0;
     text-transform: uppercase;
     letter-spacing: 2px;
+}
+
+/* Countdown Overlay */
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.countdown-overlay.hidden {
+    display: none;
+}
+
+#countdown-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 14rem;
+    font-weight: 400;
+    color: #fff;
+    text-shadow: 0 0 60px rgba(255, 255, 255, 0.5);
+    animation: countdownPop 1s ease-out;
+}
+
+@keyframes countdownPop {
+    0% {
+        transform: scale(2);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+}
+
+/* Capture Processing Overlay */
+.capture-processing-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    z-index: 15;
+}
+
+.capture-processing-overlay.hidden {
+    display: none;
+}
+
+.capture-spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+#capture-processing-text {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 3px;
 }
 
 /* ==========================================
@@ -307,22 +411,22 @@ body {
    ========================================== */
 
 .processing-panel {
-    padding: 60px;
-    max-width: 90%;
-    width: 500px;
+    padding: 80px;
+    width: 90%;
+    max-width: 600px;
 }
 
 .processing-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
+    gap: 30px;
 }
 
 .processing-spinner {
-    width: 60px;
-    height: 60px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    width: 80px;
+    height: 80px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
     border-top-color: rgba(255, 255, 255, 0.8);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -333,7 +437,7 @@ body {
 }
 
 .processing-content h2 {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
     margin: 0;
     color: #fff;
     font-weight: 400;
@@ -341,178 +445,553 @@ body {
 
 .processing-content p {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.6);
     margin: 0;
     text-align: center;
 }
 
 /* ==========================================
-   EDITOR PANEL
+   EDITOR PANEL - Portrait Optimized
    ========================================== */
 
 .editor-panel {
-    padding: 25px;
-    max-width: 98%;
-    width: 1100px;
-    max-height: 90vh;
+    padding: 30px 40px;
+    width: 95%;
+    max-width: 900px;
+    max-height: 95vh;
     overflow-y: auto;
 }
 
 .editor-layout {
     display: flex;
+    flex-direction: column;
     gap: 30px;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .editor-preview {
-    flex: 1;
+    width: 100%;
+    max-width: 500px;
     position: relative;
     background: #000;
-    border: 8px solid #1a1512;
+    border: 10px solid #1a1512;
     border-radius: 2px;
     box-shadow:
-        inset 0 0 20px rgba(0, 0, 0, 0.8),
-        0 10px 40px rgba(0, 0, 0, 0.6);
+        inset 0 0 30px rgba(0, 0, 0, 0.8),
+        0 15px 50px rgba(0, 0, 0, 0.6);
+    aspect-ratio: 4/5;
 }
 
 .preview-frame {
     position: absolute;
-    top: -8px;
-    left: -8px;
-    right: -8px;
-    bottom: -8px;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     pointer-events: none;
 }
 
 #editor-canvas {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
+    object-fit: contain;
+}
+
+/* Editor Processing Overlay */
+.editor-processing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+.editor-processing.hidden {
+    display: none;
+}
+
+.editor-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+#editor-processing-text {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .editor-controls {
-    width: 340px;
-    flex-shrink: 0;
+    width: 100%;
+    max-width: 500px;
     text-align: left;
 }
 
 .editor-controls h2 {
-    font-size: 1.5rem;
-    margin: 0 0 5px 0;
+    font-size: 1.8rem;
+    margin: 0 0 8px 0;
     color: #fff;
     font-weight: 400;
+    text-align: center;
 }
 
 .editor-subtitle {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.6);
     margin: 0 0 25px 0 !important;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-align: center;
 }
 
-.control-group {
+/* Section Titles */
+.section-title {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 14px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Style Section */
+.style-section {
+    margin-bottom: 24px;
+}
+
+.style-cards {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    margin-bottom: 25px;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
-.control-item {
-    display: grid;
-    grid-template-columns: 100px 1fr 50px;
+.style-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.style-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.style-card.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.style-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.style-card-desc {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.style-note {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Toggle Section */
+.toggle-section {
+    margin-bottom: 24px;
+}
+
+/* Crop Controls */
+.crop-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.crop-btn {
+    display: flex;
     align-items: center;
+    gap: 10px;
+    flex: 1;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.crop-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.crop-btn:active {
+    transform: scale(0.98);
+}
+
+.crop-btn.cropped {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.crop-icon {
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1;
+}
+
+.crop-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.crop-label strong {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.crop-label small {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* Manual Crop Overlay */
+.crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+}
+
+.crop-overlay.hidden {
+    display: none;
+}
+
+.crop-darkened {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.crop-top {
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.crop-bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.crop-left {
+    left: 0;
+}
+
+.crop-right {
+    right: 0;
+}
+
+.crop-box {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+    cursor: move;
+}
+
+.crop-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+}
+
+.crop-handle-nw {
+    top: -10px;
+    left: -10px;
+    cursor: nw-resize;
+}
+
+.crop-handle-ne {
+    top: -10px;
+    right: -10px;
+    cursor: ne-resize;
+}
+
+.crop-handle-sw {
+    bottom: -10px;
+    left: -10px;
+    cursor: sw-resize;
+}
+
+.crop-handle-se {
+    bottom: -10px;
+    right: -10px;
+    cursor: se-resize;
+}
+
+.crop-actions {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.crop-action-btn {
+    padding: 10px 24px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.crop-action-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.crop-action-btn.secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.crop-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Effect Row - 3-step level buttons */
+.effect-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     gap: 12px;
 }
 
-.control-item label {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.effect-row:last-child {
+    border-bottom: none;
 }
 
-.control-item input[type="range"] {
+.effect-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.effect-label strong {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.effect-label small {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.3;
+}
+
+.level-buttons {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.level-btn {
+    padding: 6px 10px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.level-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.level-btn.active {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+.level-btn.level-max {
+    background: rgba(255, 150, 50, 0.15);
+    border-color: rgba(255, 150, 50, 0.3);
+    color: rgba(255, 180, 100, 0.7);
+}
+
+.level-btn.level-max:hover {
+    background: rgba(255, 150, 50, 0.25);
+    border-color: rgba(255, 150, 50, 0.5);
+    color: rgba(255, 200, 120, 0.9);
+}
+
+.level-btn.level-max.active {
+    background: rgba(255, 150, 50, 0.35);
+    border-color: rgba(255, 150, 50, 0.6);
+    color: #ffcc80;
+}
+
+.level-btn.hidden {
+    display: none;
+}
+
+/* Tuning Section */
+.tuning-section {
+    margin-bottom: 24px;
+}
+
+.tuning-item {
+    padding: 6px 0;
+}
+
+.tuning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.tuning-header label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.tuning-range {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.tuning-item input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 2px;
+    height: 8px;
+    background: linear-gradient(to right, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    border-radius: 4px;
     cursor: pointer;
 }
 
-.control-item input[type="range"]::-webkit-slider-thumb {
+.tuning-item input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
     transition: transform 0.15s ease;
 }
 
-.control-item input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
+.tuning-item input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
 }
 
-.control-item input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+.tuning-item input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
     background: #fff;
     border: none;
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
-.control-value {
+.tuning-hint {
     font-family: 'Roboto Mono', monospace;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-align: right;
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+    margin: 12px 0 0 0;
+    line-height: 1.5;
 }
 
-.preset-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-.preset-btn {
-    padding: 12px 15px;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.2s ease;
-}
-
-.preset-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+/* Hidden Controls */
+.hidden-controls {
+    display: none;
 }
 
 .editor-actions {
     display: flex;
-    gap: 15px;
+    gap: 16px;
+    margin-top: 10px;
 }
 
 .action-btn {
     flex: 1;
-    padding: 16px 20px;
+    padding: 20px 24px;
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -536,6 +1015,20 @@ body {
     background: #fff;
     color: #000;
     border: 1px solid #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.action-btn.primary span {
+    font-weight: 700;
+}
+
+.action-btn.primary small {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.7;
 }
 
 .action-btn.primary:hover {
@@ -547,22 +1040,22 @@ body {
    ========================================== */
 
 .success-panel {
-    padding: 60px;
-    max-width: 90%;
-    width: 500px;
+    padding: 80px 60px;
+    width: 90%;
+    max-width: 600px;
 }
 
 .success-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 25px;
 }
 
 .success-icon {
-    width: 80px;
-    height: 80px;
-    border: 3px solid rgba(100, 200, 100, 0.8);
+    width: 100px;
+    height: 100px;
+    border: 4px solid rgba(100, 200, 100, 0.8);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -570,13 +1063,13 @@ body {
 }
 
 .success-icon svg {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     color: rgba(100, 200, 100, 0.9);
 }
 
 .success-content h2 {
-    font-size: 2rem;
+    font-size: 2.5rem;
     margin: 0;
     color: #fff;
     font-weight: 400;
@@ -584,68 +1077,251 @@ body {
 
 .success-content p {
     font-family: 'Roboto Mono', monospace;
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.8);
     margin: 0;
     text-align: center;
 }
 
 .success-note {
-    font-size: 0.9rem !important;
+    font-size: 1rem !important;
     color: rgba(255, 255, 255, 0.6) !important;
     margin-top: 10px !important;
 }
 
 .success-content .action-btn {
-    margin-top: 20px;
+    margin-top: 30px;
     width: 100%;
+    max-width: 400px;
 }
 
 /* ==========================================
-   PORTRAIT DISPLAY OPTIMIZATIONS (1080x1920)
+   LANDSCAPE DISPLAY OVERRIDES
    ========================================== */
 
-@media (max-aspect-ratio: 9/16), (max-width: 900px) {
+@media (min-aspect-ratio: 1/1) {
+    .editor-panel {
+        max-width: 1200px;
+        padding: 25px 30px;
+    }
+
     .editor-layout {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 35px;
     }
 
     .editor-preview {
-        max-height: 45vh;
-    }
-
-    #editor-canvas {
-        max-height: 100%;
-        width: auto;
-        margin: 0 auto;
+        flex: 0 0 auto;
+        width: 400px;
+        max-width: none;
     }
 
     .editor-controls {
-        width: 100%;
+        flex: 1;
+        max-width: 400px;
     }
 
-    .control-item {
-        grid-template-columns: 90px 1fr 45px;
+    .editor-controls h2 {
+        text-align: left;
     }
 
-    .intro-panel,
+    .editor-subtitle {
+        text-align: left;
+    }
+
+    /* Slightly smaller elements in landscape */
+    .toggle-item {
+        padding: 10px 0;
+    }
+
+    .toggle-switch {
+        width: 44px;
+        height: 24px;
+    }
+
+    .toggle-switch::after {
+        width: 18px;
+        height: 18px;
+    }
+
+    .toggle-item input:checked + .toggle-switch::after {
+        left: 23px;
+    }
+
+    .toggle-label strong {
+        font-size: 0.85rem;
+    }
+
+    .toggle-label small {
+        font-size: 0.7rem;
+    }
+
+    .action-btn {
+        padding: 16px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ==========================================
+   EXTRA LARGE PORTRAIT (1080x1920 specifically)
+   ========================================== */
+
+@media (max-aspect-ratio: 9/16) and (min-height: 1800px) {
+    .intro-panel {
+        padding: 80px 60px;
+    }
+
+    .intro-header h1 {
+        font-size: 4rem;
+    }
+
+    .intro-subtitle {
+        font-size: 1.2rem;
+        margin-bottom: 50px;
+    }
+
+    .intro-content p {
+        font-size: 1.2rem;
+    }
+
+    .style-points li {
+        font-size: 1.15rem;
+        padding: 20px 0;
+    }
+
+    .start-btn {
+        padding: 28px 100px;
+        font-size: 1.5rem;
+    }
+
     .camera-panel {
+        padding: 50px;
+    }
+
+    .camera-header h2 {
+        font-size: 3rem;
+    }
+
+    .camera-container {
+        max-width: 550px;
+    }
+
+    .capture-btn {
+        width: 120px;
+        height: 120px;
+    }
+
+    .capture-btn-text {
+        font-size: 2.5rem;
+    }
+
+    .editor-preview {
+        max-width: 550px;
+    }
+
+    .editor-controls h2 {
+        font-size: 2rem;
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+    }
+
+    .toggle-label strong {
+        font-size: 1.05rem;
+    }
+
+    .toggle-label small {
+        font-size: 0.85rem;
+    }
+
+    .action-btn {
+        padding: 24px 28px;
+        font-size: 1.1rem;
+    }
+}
+
+/* ==========================================
+   SMALL SCREENS
+   ========================================== */
+
+@media (max-height: 800px) {
+    .intro-panel {
         padding: 30px 25px;
     }
 
     .intro-header h1 {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
+    }
+
+    .intro-subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .intro-content p {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .style-points li {
+        padding: 10px 0;
+        font-size: 0.85rem;
+    }
+
+    .start-btn {
+        padding: 16px 50px;
+        font-size: 1rem;
+    }
+
+    .camera-panel {
+        padding: 25px;
+    }
+
+    .camera-header h2 {
+        font-size: 1.8rem;
     }
 
     .camera-container {
-        max-width: 100%;
+        max-width: 320px;
+    }
+
+    .capture-btn {
+        width: 70px;
+        height: 70px;
+    }
+
+    .editor-panel {
+        padding: 20px;
+    }
+
+    .editor-preview {
+        max-width: 300px;
+        border-width: 6px;
+    }
+
+    .toggle-item {
+        padding: 8px 0;
+    }
+
+    .toggle-label small {
+        display: none;
+    }
+
+    .crop-label small {
+        display: none;
+    }
+
+    .action-btn {
+        padding: 14px 16px;
+        font-size: 0.85rem;
     }
 }
 
 /* Scrollbar styling */
 .editor-panel::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .editor-panel::-webkit-scrollbar-track {
@@ -654,9 +1330,232 @@ body {
 
 .editor-panel::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .editor-panel::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   DEBUG PANEL
+   ========================================== */
+
+.debug-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.debug-toggle-btn {
+    padding: 10px 20px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.debug-toggle-btn:hover {
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.debug-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: rgba(20, 20, 20, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    z-index: 1000;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.debug-panel.hidden {
+    display: none;
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debug-header h3 {
+    margin: 0;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.debug-close-btn {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.debug-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.debug-content {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.debug-preset-select {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.debug-preset-select label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.debug-preset-select select {
+    flex: 1;
+    padding: 10px 14px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.debug-preset-select select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.debug-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.debug-control {
+    display: grid;
+    grid-template-columns: 90px 1fr 55px;
+    align-items: center;
+    gap: 12px;
+}
+
+.debug-control label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+}
+
+.debug-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.debug-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.debug-control span {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: right;
+}
+
+.debug-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.debug-btn {
+    flex: 1;
+    padding: 12px 14px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.debug-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.debug-export {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.debug-export label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+}
+
+.debug-export textarea {
+    width: 100%;
+    height: 120px;
+    padding: 12px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.8);
+    resize: none;
 }
