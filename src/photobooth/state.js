@@ -41,14 +41,14 @@ export const filterSettings = {
 
 // Effect levels: 0 = off, 1 = medium, 2 = high, 3 = max (debug only)
 export const effectLevels = {
-    silhouette: 2,
-    lighting: 2,
-    highcontrast: 2,
-    crushedblacks: 2,
-    grain: 2,
-    vignette: 2,
-    sepia: 2,
-    softness: 2
+    silhouette: 0,
+    lighting: 0,
+    highcontrast: 0,
+    crushedblacks: 0,
+    grain: 0,
+    vignette: 0,
+    sepia: 0,
+    softness: 0
 }
 
 // Debug mode flag
