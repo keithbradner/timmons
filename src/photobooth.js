@@ -20,6 +20,7 @@ import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/cr
 import * as debug from './photobooth/debug.js'
 import { isWebGPUSupported, initWebGPU, applyFiltersGPU } from './photobooth/gpu-filters.js'
 import { initUpscaleGPU, upscaleImageGPU, upscaleMaskGPU, calculateScale } from './photobooth/gpu-upscale.js'
+import { initEnhanceGPU, applyEnhancement } from './photobooth/gpu-enhance.js'
 
 // GPU acceleration state
 let useGPU = false
@@ -39,8 +40,9 @@ async function init() {
         useGPU = await initWebGPU()
         if (useGPU) {
             console.log('Using WebGPU for accelerated image processing')
-            // Also init upscaler
+            // Also init upscaler and enhancer
             await initUpscaleGPU()
+            await initEnhanceGPU()
         }
     } else {
         console.log('WebGPU not supported, using CPU filters')
@@ -387,18 +389,39 @@ async function updatePreview() {
     }
 
     const ctx = state.elements.editorCanvas.getContext('2d')
-    let workingData
+    let workingData = sourceImage
+    let workingMask = sourceMask
+
+    // Apply enhancement BEFORE filters if enabled and set to 'before'
+    if (state.enhanceSettings.enabled && state.enhanceSettings.order === 'before') {
+        try {
+            workingData = await applyEnhancement(workingData, workingMask, state.enhanceSettings)
+            console.log('Applied enhancement (before filters)')
+        } catch (e) {
+            console.warn('Enhancement failed:', e)
+        }
+    }
 
     // Use GPU-accelerated filters if available
     if (useGPU) {
         try {
-            workingData = await applyFiltersGPU(sourceImage, sourceMask, state.filterSettings)
+            workingData = await applyFiltersGPU(workingData, workingMask, state.filterSettings)
         } catch (e) {
             console.warn('GPU filter failed, falling back to CPU:', e)
-            workingData = applyCPUFilters(sourceImage, sourceMask)
+            workingData = applyCPUFilters(workingData, workingMask)
         }
     } else {
-        workingData = applyCPUFilters(sourceImage, sourceMask)
+        workingData = applyCPUFilters(workingData, workingMask)
+    }
+
+    // Apply enhancement AFTER filters if enabled and set to 'after'
+    if (state.enhanceSettings.enabled && state.enhanceSettings.order === 'after') {
+        try {
+            workingData = await applyEnhancement(workingData, workingMask, state.enhanceSettings)
+            console.log('Applied enhancement (after filters)')
+        } catch (e) {
+            console.warn('Enhancement failed:', e)
+        }
     }
 
     state.setProcessedImageData(workingData)
@@ -806,6 +829,42 @@ window.saveDebugPreset = () => debug.saveDebugPreset(applyPreset, updatePreview)
 window.exportPresets = debug.exportPresets
 window.resetToDefault = debug.resetToDefault
 window.setToNeutral = debug.setToNeutral
+
+// Enhancement controls
+async function setEnhanceEnabled(enabled) {
+    state.enhanceSettings.enabled = enabled
+    // Update button states
+    document.getElementById('enhance-off-btn')?.classList.toggle('active', !enabled)
+    document.getElementById('enhance-on-btn')?.classList.toggle('active', enabled)
+    await updatePreview()
+}
+
+async function setEnhanceOrder(order) {
+    state.enhanceSettings.order = order
+    // Update button states
+    document.getElementById('enhance-before-btn')?.classList.toggle('active', order === 'before')
+    document.getElementById('enhance-after-btn')?.classList.toggle('active', order === 'after')
+    if (state.enhanceSettings.enabled) {
+        await updatePreview()
+    }
+}
+
+async function updateEnhanceValue(field) {
+    const slider = document.getElementById(`debug-${field}`)
+    const valueDisplay = document.getElementById(`debug-val-${field}`)
+    if (slider && valueDisplay) {
+        const value = parseFloat(slider.value)
+        valueDisplay.textContent = value
+        state.enhanceSettings[field] = value
+        if (state.enhanceSettings.enabled) {
+            await updatePreview()
+        }
+    }
+}
+
+window.setEnhanceEnabled = setEnhanceEnabled
+window.setEnhanceOrder = setEnhanceOrder
+window.updateEnhanceValue = updateEnhanceValue
 
 // Technique info modal
 const techniqueInfo = {

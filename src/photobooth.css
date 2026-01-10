@@ -1800,3 +1800,31 @@ body {
     color: rgba(255, 255, 255, 0.8);
     resize: none;
 }
+
+.debug-toggle-group {
+    display: flex;
+    gap: 4px;
+}
+
+.debug-toggle-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.debug-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.debug-toggle-btn.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}

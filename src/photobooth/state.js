@@ -55,6 +55,16 @@ export const effectLevels = {
 export let debugMode = false
 export function setDebugMode(enabled) { debugMode = enabled }
 
+// Enhancement settings (debug only)
+export const enhanceSettings = {
+    enabled: false,
+    order: 'before',  // 'before' or 'after' other filters
+    autoWhiteBalance: 0.5,
+    localContrast: 0.4,
+    skinSmoothing: 0.3,
+    detailSharpening: 0.3
+}
+
 // Preset values for debug panel
 export const presetValues = {
     classic: {
