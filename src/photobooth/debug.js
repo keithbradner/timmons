@@ -47,7 +47,7 @@ export function updateDebugValue(field) {
     }
 }
 
-export function applyDebugSettings(updatePreviewCallback) {
+export async function applyDebugSettings(updatePreviewCallback) {
     const fields = ['contrast', 'brightness', 'shadows', 'highlights', 'grain', 'vignette', 'sepia', 'blur']
     fields.forEach(field => {
         const slider = document.getElementById(`debug-${field}`)
@@ -56,7 +56,7 @@ export function applyDebugSettings(updatePreviewCallback) {
         }
     })
 
-    updatePreviewCallback()
+    await updatePreviewCallback()
 }
 
 export function saveDebugPreset(applyPresetCallback, updatePreviewCallback) {
@@ -86,10 +86,10 @@ export function exportPresets() {
     }
 }
 
-export function applyPreset(presetName, updatePreviewCallback) {
+export async function applyPreset(presetName, updatePreviewCallback) {
     const preset = presetValues[presetName]
     if (preset) {
         Object.assign(filterSettings, preset)
-        updatePreviewCallback()
+        await updatePreviewCallback()
     }
 }

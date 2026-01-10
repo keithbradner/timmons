@@ -17,16 +17,30 @@ import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { upscaleImage } from './photobooth/upscale.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
 import * as debug from './photobooth/debug.js'
+import { isWebGPUSupported, initWebGPU, applyFiltersGPU } from './photobooth/gpu-filters.js'
+
+// GPU acceleration state
+let useGPU = false
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', init)
 
-function init() {
+async function init() {
     state.initElements()
     setupLevelButtons()
     setupInactivityTimer(() => {
         window.location.href = '/'
     })
+
+    // Initialize WebGPU for accelerated filters
+    if (await isWebGPUSupported()) {
+        useGPU = await initWebGPU()
+        if (useGPU) {
+            console.log('Using WebGPU for accelerated image processing')
+        }
+    } else {
+        console.log('WebGPU not supported, using CPU filters')
+    }
 }
 
 function setupLevelButtons() {
@@ -62,7 +76,7 @@ async function setEffectLevel(effectName, level) {
     }
 
     applyLevelSettings()
-    updatePreview()
+    await updatePreview()
 
     hideEditorProcessing()
 }
@@ -297,11 +311,11 @@ async function initEditor() {
 
     syncLevelButtons()
     applyLevelSettings()
-    updatePreview()
+    await updatePreview()
     state.showPanel('editor')
 }
 
-function updatePreview() {
+async function updatePreview() {
     if (!state.imageOriginal) return
 
     // Get the source image (cropped or full)
@@ -324,6 +338,32 @@ function updatePreview() {
     }
 
     const ctx = state.elements.editorCanvas.getContext('2d')
+    let workingData
+
+    // Use GPU-accelerated filters if available
+    if (useGPU) {
+        try {
+            workingData = await applyFiltersGPU(sourceImage, sourceMask, state.filterSettings)
+        } catch (e) {
+            console.warn('GPU filter failed, falling back to CPU:', e)
+            workingData = applyCPUFilters(sourceImage, sourceMask)
+        }
+    } else {
+        workingData = applyCPUFilters(sourceImage, sourceMask)
+    }
+
+    state.setProcessedImageData(workingData)
+    ctx.putImageData(workingData, 0, 0)
+
+    if (state.filterSettings.blur > 0) {
+        ctx.filter = `blur(${state.filterSettings.blur}px)`
+        ctx.drawImage(state.elements.editorCanvas, 0, 0)
+        ctx.filter = 'none'
+    }
+}
+
+// CPU fallback for filters
+function applyCPUFilters(sourceImage, sourceMask) {
     const workingData = new ImageData(
         new Uint8ClampedArray(sourceImage.data),
         sourceImage.width,
@@ -345,14 +385,7 @@ function updatePreview() {
     const useMaskForFilters = state.filterSettings.backgroundDim > 0 && sourceMask
     applyTimmonsFilters(workingData, useMaskForFilters ? sourceMask : null)
 
-    state.setProcessedImageData(workingData)
-    ctx.putImageData(workingData, 0, 0)
-
-    if (state.filterSettings.blur > 0) {
-        ctx.filter = `blur(${state.filterSettings.blur}px)`
-        ctx.drawImage(state.elements.editorCanvas, 0, 0)
-        ctx.filter = 'none'
-    }
+    return workingData
 }
 
 // Helper to crop mask to match cropped image
@@ -482,14 +515,14 @@ function startOver() {
 async function cropToSubject() {
     showEditorProcessing('Framing subject...')
     await yieldToMain()
-    doCropToSubject(applyLevelSettings, updatePreview)
+    await doCropToSubject(applyLevelSettings, updatePreview)
     hideEditorProcessing()
 }
 
 async function applyPreset(presetName) {
     showEditorProcessing('Applying preset...')
     await yieldToMain()
-    debug.applyPreset(presetName, updatePreview)
+    await debug.applyPreset(presetName, updatePreview)
     hideEditorProcessing()
 }
 
@@ -506,7 +539,7 @@ let manualCropState = {
     box: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 } // Normalized 0-1
 }
 
-function openManualCrop() {
+async function openManualCrop() {
     const overlay = document.getElementById('crop-overlay')
     if (!overlay) return
 
@@ -514,7 +547,7 @@ function openManualCrop() {
     if (state.isCropped) {
         state.setIsCropped(false)
         state.setSubjectBounds(null)
-        updatePreview()
+        await updatePreview()
     }
 
     manualCropState.active = true
@@ -664,7 +697,7 @@ async function applyCrop() {
     state.setIsCropped(true)
 
     manualCropState.active = false
-    updatePreview()
+    await updatePreview()
     hideEditorProcessing()
 }
 

@@ -8,7 +8,7 @@ import * as state from './state.js'
 /**
  * Toggle crop to subject on/off
  */
-export function cropToSubject(applySettingsCallback, updatePreviewCallback) {
+export async function cropToSubject(applySettingsCallback, updatePreviewCallback) {
     if (!state.segmentationMask || !state.imageWithoutBackground) {
         console.warn('No segmentation data available for cropping')
         return
@@ -21,7 +21,7 @@ export function cropToSubject(applySettingsCallback, updatePreviewCallback) {
         state.setIsCropped(false)
         if (btn) btn.classList.remove('cropped')
         applySettingsCallback()
-        updatePreviewCallback()
+        await updatePreviewCallback()
         return
     }
 
@@ -103,7 +103,7 @@ export function cropToSubject(applySettingsCallback, updatePreviewCallback) {
     if (btn) btn.classList.add('cropped')
 
     applySettingsCallback()
-    updatePreviewCallback()
+    await updatePreviewCallback()
 }
 
 /**
