@@ -16,10 +16,10 @@ import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.
 // MediaPipe segmenter instance
 let imageSegmenter = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
-import { upscaleImage } from './photobooth/upscale.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
 import * as debug from './photobooth/debug.js'
 import { isWebGPUSupported, initWebGPU, applyFiltersGPU } from './photobooth/gpu-filters.js'
+import { initUpscaleGPU, upscaleImageGPU, upscaleMaskGPU, calculateScale } from './photobooth/gpu-upscale.js'
 
 // GPU acceleration state
 let useGPU = false
@@ -39,6 +39,8 @@ async function init() {
         useGPU = await initWebGPU()
         if (useGPU) {
             console.log('Using WebGPU for accelerated image processing')
+            // Also init upscaler
+            await initUpscaleGPU()
         }
     } else {
         console.log('WebGPU not supported, using CPU filters')
@@ -349,6 +351,19 @@ async function updatePreview() {
         if (state.segmentationMask) {
             sourceMask = cropMask(state.segmentationMask, state.imageOriginal.width, state.subjectBounds)
         }
+
+        // Upscale cropped image for higher quality output
+        const scale = calculateScale(sourceImage.width, sourceImage.height, 1400)
+        if (scale > 1) {
+            console.log(`Upscaling cropped image by ${scale.toFixed(2)}x...`)
+            sourceImage = await upscaleImageGPU(sourceImage, scale)
+            if (sourceMask) {
+                const cropWidth = state.subjectBounds.width
+                const cropHeight = state.subjectBounds.height
+                sourceMask = await upscaleMaskGPU(sourceMask, cropWidth, cropHeight, scale)
+            }
+        }
+
         console.log(`Applying effects to CROPPED image: ${sourceImage.width}x${sourceImage.height} (original: ${state.imageOriginal.width}x${state.imageOriginal.height})`)
     } else {
         console.log(`Applying effects to FULL image: ${sourceImage.width}x${sourceImage.height}`)
@@ -477,14 +492,14 @@ async function sendToPrint() {
         ctx.filter = 'none'
     }
 
-    // Get the current image data for upscaling
+    // Get the current image data
     let finalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
-    // Upscale for print quality
-    const upscaledImage = await upscaleImage(finalImageData, () => {})
-
-    if (upscaledImage) {
-        // Create new canvas with upscaled dimensions
+    // Upscale for print quality (target 2400px for 8" at 300dpi)
+    const printScale = calculateScale(finalImageData.width, finalImageData.height, 2400)
+    if (printScale > 1) {
+        if (processingStatus) processingStatus.textContent = 'Enhancing for print...'
+        const upscaledImage = await upscaleImageGPU(finalImageData, printScale)
         canvas.width = upscaledImage.width
         canvas.height = upscaledImage.height
         ctx.putImageData(upscaledImage, 0, 0)
