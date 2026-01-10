@@ -176,54 +176,37 @@ export async function cropToSubject(applySettingsCallback, updatePreviewCallback
         frameType: subject.frameType,
         coverage: (subject.coverage * 100).toFixed(1) + '%',
         headWidth: subject.head.width,
-        eyeY: subject.head.eyeY
+        eyeY: subject.head.eyeY,
+        headCenterX: subject.head.centerX
     })
 
     // Target aspect ratio 4:5 (portrait)
     const targetRatio = 4 / 5
 
-    // Tight padding - we want to crop close to the subject
-    // Just enough room for headroom and breathing space
-    let paddingMultiplier
-    switch (subject.frameType) {
-        case 'headshot':
-            paddingMultiplier = { width: 1.15, height: 1.1 }  // Very tight
-            break
-        case 'full':
-            paddingMultiplier = { width: 1.1, height: 1.08 }  // Tight
-            break
-        default: // bust
-            paddingMultiplier = { width: 1.12, height: 1.1 }  // Tight
-    }
+    // BASE THE CROP ON HEAD SIZE, not full body
+    // A good portrait crop is about 3-4x the head width
+    const headWidth = subject.head.width
+    const portraitWidth = headWidth * 3.2
 
-    const paddedWidth = subject.width * paddingMultiplier.width
-    const paddedHeight = subject.height * paddingMultiplier.height
+    // Calculate crop dimensions from head-based width
+    let cropWidth = portraitWidth
+    let cropHeight = cropWidth / targetRatio
 
-    // Determine final crop dimensions maintaining aspect ratio
-    let cropWidth, cropHeight
-
-    if (paddedWidth / paddedHeight > targetRatio) {
-        cropWidth = paddedWidth
+    // Ensure we don't crop larger than the image
+    if (cropWidth > width) {
+        cropWidth = width
         cropHeight = cropWidth / targetRatio
-    } else {
-        cropHeight = paddedHeight
+    }
+    if (cropHeight > height) {
+        cropHeight = height
         cropWidth = cropHeight * targetRatio
     }
 
-    // Rule of thirds: position eyes at upper third line
-    // Eyes should be roughly 1/3 from the top
-    const targetEyePosition = cropHeight * 0.33
+    // Position: eyes at upper third, centered on head
+    const targetEyePosition = cropHeight * 0.35  // Eyes slightly above 1/3 mark
 
-    // Calculate crop position
     let cropY = subject.head.eyeY - targetEyePosition
-
-    // Use head center for horizontal positioning (more accurate than bounding box center)
     let cropX = subject.head.centerX - cropWidth / 2
-
-    // If head detection seems off, fall back to center of mass
-    if (Math.abs(subject.head.centerX - subject.centerOfMass.x) > subject.width * 0.3) {
-        cropX = subject.centerOfMass.x - cropWidth / 2
-    }
 
     // Clamp to image bounds
     cropX = Math.max(0, Math.min(width - cropWidth, cropX))
