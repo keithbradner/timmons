@@ -174,10 +174,19 @@ function startCountdown() {
             state.elements.captureBtn.classList.remove('counting')
             state.elements.captureBtnText.textContent = '3'
 
+            // Capture frame BEFORE pausing (webcam streams may not draw correctly when paused)
+            const captureCanvas = document.createElement('canvas')
+            captureCanvas.width = state.elements.video.videoWidth
+            captureCanvas.height = state.elements.video.videoHeight
+            const captureCtx = captureCanvas.getContext('2d')
+            captureCtx.translate(captureCanvas.width, 0)
+            captureCtx.scale(-1, 1)
+            captureCtx.drawImage(state.elements.video, 0, 0)
+
             state.elements.video.pause()
             showCaptureProcessing('Hold still...')
 
-            setTimeout(() => capturePhoto(), 50)
+            setTimeout(() => capturePhoto(captureCanvas), 50)
         }
     }, 1000)
 }
@@ -186,22 +195,14 @@ function startCountdown() {
 // CAPTURE AND PROCESSING
 // ==========================================
 
-async function capturePhoto() {
-    if (!state.elements.video.videoWidth) return
-
+async function capturePhoto(preCapuredCanvas) {
     // Disable button and show processing
     state.elements.captureBtn.disabled = true
     showCaptureProcessing('Capturing...')
 
-    const canvas = document.createElement('canvas')
-    canvas.width = state.elements.video.videoWidth
-    canvas.height = state.elements.video.videoHeight
+    // Use pre-captured canvas (captured before video was paused)
+    const canvas = preCapuredCanvas
     const ctx = canvas.getContext('2d')
-
-    ctx.translate(canvas.width, 0)
-    ctx.scale(-1, 1)
-    ctx.drawImage(state.elements.video, 0, 0)
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
 
     const width = canvas.width
     const height = canvas.height
@@ -219,9 +220,19 @@ async function capturePhoto() {
                 segmentationThreshold: 0.6
             })
 
-            showCaptureProcessing('Refining edges...')
-            await yieldToMain()
-            segMask = createSoftMask(segmentation.data, width, height)
+            // Check if any subject was detected (at least 1% of pixels)
+            const subjectPixels = segmentation.data.reduce((sum, val) => sum + val, 0)
+            const totalPixels = segmentation.data.length
+            const subjectRatio = subjectPixels / totalPixels
+
+            if (subjectRatio > 0.01) {
+                showCaptureProcessing('Refining edges...')
+                await yieldToMain()
+                segMask = createSoftMask(segmentation.data, width, height)
+                console.log(`Subject detected: ${(subjectRatio * 100).toFixed(1)}% of frame`)
+            } else {
+                console.log('No subject detected, skipping background effects')
+            }
         }
     } catch (error) {
         console.error('Segmentation failed:', error)
