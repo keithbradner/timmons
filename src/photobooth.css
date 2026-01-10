@@ -732,6 +732,7 @@ body {
 
 .print-icon {
     font-size: 2.5rem;
+    filter: grayscale(1);
 }
 
 .print-text {
