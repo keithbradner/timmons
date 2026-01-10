@@ -107,8 +107,16 @@ export async function applyFiltersGPU(imageData, mask, settings) {
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
     })
 
-    // Create mask buffer (use all 1s if no mask)
-    const maskData = mask || new Float32Array(pixelCount).fill(1)
+    // Create mask buffer (use all 1s if no mask or if mask has wrong dimensions)
+    let maskData
+    if (mask && mask.length === pixelCount) {
+        maskData = mask
+    } else {
+        if (mask && mask.length !== pixelCount) {
+            console.warn(`GPU filters: Mask size mismatch (${mask.length} vs ${pixelCount}), using fallback`)
+        }
+        maskData = new Float32Array(pixelCount).fill(1)
+    }
     const maskBuffer = device.createBuffer({
         size: maskData.byteLength,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST

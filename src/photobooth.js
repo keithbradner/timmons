@@ -355,12 +355,22 @@ async function updatePreview() {
         // Upscale cropped image for higher quality output
         const scale = calculateScale(sourceImage.width, sourceImage.height, 1400)
         if (scale > 1) {
+            // Store pre-upscale dimensions for mask
+            const preUpscaleWidth = sourceImage.width
+            const preUpscaleHeight = sourceImage.height
+
             console.log(`Upscaling cropped image by ${scale.toFixed(2)}x...`)
             sourceImage = await upscaleImageGPU(sourceImage, scale)
+
             if (sourceMask) {
-                const cropWidth = state.subjectBounds.width
-                const cropHeight = state.subjectBounds.height
-                sourceMask = await upscaleMaskGPU(sourceMask, cropWidth, cropHeight, scale)
+                sourceMask = await upscaleMaskGPU(sourceMask, preUpscaleWidth, preUpscaleHeight, scale)
+            }
+
+            // Verify dimensions match
+            const expectedMaskSize = sourceImage.width * sourceImage.height
+            if (sourceMask && sourceMask.length !== expectedMaskSize) {
+                console.warn(`Mask size mismatch: ${sourceMask.length} vs expected ${expectedMaskSize}, creating fallback mask`)
+                sourceMask = new Float32Array(expectedMaskSize).fill(1)
             }
         }
 
@@ -409,20 +419,28 @@ function applyCPUFilters(sourceImage, sourceMask) {
         sourceImage.height
     )
 
+    // Validate mask dimensions
+    const expectedMaskSize = sourceImage.width * sourceImage.height
+    let validMask = sourceMask
+    if (sourceMask && sourceMask.length !== expectedMaskSize) {
+        console.warn(`CPU filters: Mask size mismatch (${sourceMask.length} vs ${expectedMaskSize}), using fallback`)
+        validMask = null
+    }
+
     // Apply lighting if enabled (before other filters)
-    if (state.filterSettings.lightBoost > 0 && sourceMask) {
+    if (state.filterSettings.lightBoost > 0 && validMask) {
         applyDirectionalLighting(
             workingData.data,
             workingData.width,
             workingData.height,
-            sourceMask,
+            validMask,
             state.filterSettings.lightBoost
         )
     }
 
     // Apply filters (with mask for subject-only effects when background is being handled)
-    const useMaskForFilters = state.filterSettings.backgroundDim > 0 && sourceMask
-    applyTimmonsFilters(workingData, useMaskForFilters ? sourceMask : null)
+    const useMaskForFilters = state.filterSettings.backgroundDim > 0 && validMask
+    applyTimmonsFilters(workingData, useMaskForFilters ? validMask : null)
 
     return workingData
 }
