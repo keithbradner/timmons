@@ -15,7 +15,7 @@ export async function initUpscaler() {
     if (upscalerInstance) return upscalerInstance
 
     try {
-        console.log('Initializing AI upscaler...')
+        console.log('Initializing upscaler...')
         upscalerInstance = new Upscaler({
             model: x2
         })
@@ -26,7 +26,7 @@ export async function initUpscaler() {
         warmupCanvas.height = 16
         await upscalerInstance.upscale(warmupCanvas)
 
-        console.log('AI upscaler ready')
+        console.log('Upscaler ready')
         return upscalerInstance
     } catch (error) {
         console.error('Failed to initialize upscaler:', error)

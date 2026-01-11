@@ -3,7 +3,7 @@
  * Creates portraits in the style of William "Dever" Timmons
  */
 
-import { ImageSegmenter, FilesetResolver } from '@mediapipe/tasks-vision'
+import { pipeline, env } from '@huggingface/transformers'
 
 import { setupInactivityTimer } from './inactivity.js'
 import { audioManager } from './audio-manager.js'
@@ -13,8 +13,13 @@ import * as state from './photobooth/state.js'
 import { applyTimmonsFilters } from './photobooth/filters.js'
 import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.js'
 
-// MediaPipe segmenter instance
-let imageSegmenter = null
+// Configure Transformers.js - use local models only (browser can't auth with HF)
+env.allowLocalModels = true
+env.remoteModels = false
+env.localModelPath = '/models/'
+
+// RMBG segmenter pipeline
+let segmenter = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
 import * as debug from './photobooth/debug.js'
@@ -166,26 +171,22 @@ async function initCamera() {
 }
 
 async function loadSegmentationModel() {
-    if (imageSegmenter) return
+    if (segmenter) return
 
     try {
-        const vision = await FilesetResolver.forVisionTasks(
-            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-        )
+        showCaptureProcessing('Loading AI model...')
 
-        imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
-                delegate: 'GPU'
-            },
-            runningMode: 'IMAGE',
-            outputCategoryMask: false,
-            outputConfidenceMasks: true
+        // Use RMBG-1.4 with image-segmentation pipeline (proven working)
+        // RMBG-2.0 has known issues: https://github.com/huggingface/transformers.js/issues/1107
+        segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
+            device: 'webgpu',  // Fast on M-series Macs
         })
 
-        console.log('MediaPipe Selfie Segmenter loaded')
+        console.log('RMBG-1.4 segmenter loaded successfully')
+        hideCaptureProcessing()
     } catch (error) {
-        console.error('Failed to load MediaPipe segmenter:', error)
+        console.error('Failed to load segmentation model:', error)
+        hideCaptureProcessing()
     }
 }
 
@@ -286,45 +287,72 @@ async function capturePhoto(preCapuredCanvas) {
     const height = canvas.height
     const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Run segmentation with MediaPipe
+    // Run segmentation with BiRefNet (RMBG-2.0)
     let segMask = null
     try {
-        if (imageSegmenter) {
+        if (segmenter) {
             showCaptureProcessing('Detecting subject...')
             await yieldToMain()
 
-            // MediaPipe returns confidence masks - we want the person mask
-            const result = imageSegmenter.segment(canvas)
+            // Convert canvas to data URL for pipeline input
+            const imageDataUrl = canvas.toDataURL('image/png')
 
-            if (result.confidenceMasks && result.confidenceMasks.length > 0) {
-                // Get the confidence mask (0-1 float values)
-                const maskData = result.confidenceMasks[0].getAsFloat32Array()
+            showCaptureProcessing('Running BiRefNet...')
+            await yieldToMain()
 
-                // Check if any subject was detected (at least 1% of pixels > 0.5)
-                let subjectPixels = 0
-                for (let i = 0; i < maskData.length; i++) {
-                    if (maskData[i] > 0.5) subjectPixels++
-                }
-                const subjectRatio = subjectPixels / maskData.length
+            // Run the segmentation pipeline
+            const results = await segmenter(imageDataUrl)
 
-                if (subjectRatio > 0.01) {
-                    showCaptureProcessing('Refining edges...')
-                    await yieldToMain()
+            showCaptureProcessing('Processing mask...')
+            await yieldToMain()
 
-                    // MediaPipe already gives us smooth confidence values
-                    // Just apply light blur for extra smooth edges
-                    segMask = createSoftMaskFromConfidence(maskData, width, height)
-                    console.log(`Subject detected: ${(subjectRatio * 100).toFixed(1)}% of frame`)
+            // Pipeline returns array of segments, get the mask
+            // For background removal, we typically get one result with the foreground mask
+            if (results && results.length > 0) {
+                const result = results[0]
+
+                // The mask might be in result.mask (RawImage) or we need to extract it
+                if (result.mask) {
+                    const maskImage = result.mask
+                    const maskData = maskImage.data
+
+                    // Resize mask to original image dimensions
+                    const resizedMask = new Float32Array(width * height)
+                    const maskWidth = maskImage.width
+                    const maskHeight = maskImage.height
+                    const scaleX = maskWidth / width
+                    const scaleY = maskHeight / height
+
+                    for (let y = 0; y < height; y++) {
+                        for (let x = 0; x < width; x++) {
+                            const srcX = Math.floor(x * scaleX)
+                            const srcY = Math.floor(y * scaleY)
+                            const srcIdx = (srcY * maskWidth + srcX) * maskImage.channels
+                            // Normalize to 0-1 range
+                            resizedMask[y * width + x] = maskData[srcIdx] / 255
+                        }
+                    }
+
+                    // Check if any subject was detected
+                    let subjectPixels = 0
+                    for (let i = 0; i < resizedMask.length; i++) {
+                        if (resizedMask[i] > 0.5) subjectPixels++
+                    }
+                    const subjectRatio = subjectPixels / resizedMask.length
+
+                    if (subjectRatio > 0.01) {
+                        segMask = createSoftMaskFromConfidence(resizedMask, width, height)
+                        console.log(`BiRefNet: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
+                    } else {
+                        console.log('No subject detected, skipping background effects')
+                    }
                 } else {
-                    console.log('No subject detected, skipping background effects')
+                    console.log('Pipeline result:', result)
                 }
-
-                // Close the mask to free memory
-                result.confidenceMasks[0].close()
             }
         }
     } catch (error) {
-        console.error('Segmentation failed:', error)
+        console.error('BiRefNet segmentation failed:', error)
     }
     state.setSegmentationMask(segMask)
 
