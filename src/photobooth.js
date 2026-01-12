@@ -174,7 +174,7 @@ async function loadSegmentationModel() {
     if (segmenter) return
 
     try {
-        showCaptureProcessing('Loading AI model...')
+        showCaptureProcessing('Loading filters...')
 
         // Use RMBG-1.4 with image-segmentation pipeline (proven working)
         // RMBG-2.0 has known issues: https://github.com/huggingface/transformers.js/issues/1107
