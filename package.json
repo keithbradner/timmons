@@ -19,7 +19,6 @@
     "@tensorflow/tfjs": "^4.11.0",
     "@upscalerjs/esrgan-medium": "^1.0.0-beta.13",
     "express": "^4.18.2",
-    "onnxruntime-web": "^1.23.2",
     "three": "0.128.0",
     "upscaler": "^1.0.0-beta.19"
   },
