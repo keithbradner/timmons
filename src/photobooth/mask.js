@@ -23,26 +23,50 @@ export function createSoftMask(segmentationData, width, height) {
 }
 
 /**
- * Create a soft mask from MediaPipe confidence values
- * MediaPipe already provides smooth 0-1 confidence values,
- * so we just need light processing to smooth edges without losing hair detail
+ * Create a soft mask from MediaPipe/RMBG confidence values
+ * Processes the mask to have smooth, natural-looking edges
  */
 export function createSoftMaskFromConfidence(confidenceData, width, height) {
-    // MediaPipe confidence values are already smooth (0-1 float)
     // Copy to a new array since the original may be freed
     const mask = new Float32Array(confidenceData.length)
     for (let i = 0; i < confidenceData.length; i++) {
         mask[i] = confidenceData[i]
     }
 
-    // Very light dilation to capture fine hair strands that might be just under threshold
-    const dilated = dilateMask(mask, width, height, 1)
+    // Count soft pixels (gradient values at edges)
+    let softCount = 0
+    for (let i = 0; i < mask.length; i++) {
+        if (mask[i] > 0.05 && mask[i] < 0.95) softCount++
+    }
+    const softPercent = (softCount / mask.length) * 100
 
-    // Light gaussian blur for smooth, feathered edges
-    // Smaller radius than before to preserve hair detail
-    const blurred = gaussianBlurMask(dilated, width, height, 4)
+    // If model provides edge gradients (even small %), preserve them with light processing
+    // Typical segmentation models have 0.5-2% soft pixels at edges
+    if (softPercent > 0.1) {
+        console.log(`Mask has ${softPercent.toFixed(1)}% soft edge pixels - preserving gradients`)
+        // Light blur to smooth edges without destroying gradients
+        return gaussianBlurMask(mask, width, height, 2)
+    } else {
+        // Truly binary mask - need to create soft edges
+        console.log('Mask is fully binary - creating soft edges')
+        const dilated = dilateMask(mask, width, height, 2)
+        return gaussianBlurMask(dilated, width, height, 6)
+    }
+}
 
-    return blurred
+/**
+ * Apply contrast curve to mask for sharper foreground/background separation
+ * strength > 1 makes edges more decisive, < 1 makes them softer
+ */
+export function contrastMask(mask, strength) {
+    const result = new Float32Array(mask.length)
+    for (let i = 0; i < mask.length; i++) {
+        // S-curve contrast: pushes values toward 0 or 1
+        const v = mask[i]
+        const curved = 0.5 + (v - 0.5) * strength
+        result[i] = Math.max(0, Math.min(1, curved))
+    }
+    return result
 }
 
 /**

@@ -363,16 +363,19 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     var b = pixel.z;
 
     // 1. Background dimming - smooth blend based on mask value
-    // maskVal 0 = full dim, maskVal 1 = no dim
+    // maskVal 0 = full dim (background), maskVal 1 = no dim (subject)
     if (uniforms.backgroundDim > 0.0) {
-        let dimFactor = 1.0 - uniforms.backgroundDim;
-        let dimmedR = r * dimFactor;
-        let dimmedG = g * dimFactor;
-        let dimmedB = b * dimFactor;
-        // Smoothly blend between dimmed (background) and original (subject)
-        r = mix(dimmedR, r, maskVal);
-        g = mix(dimmedG, g, maskVal);
-        b = mix(dimmedB, b, maskVal);
+        // Non-linear dimming: push background to black more aggressively
+        let dimPower = 1.0 + uniforms.backgroundDim * 2.0; // 1-3 range
+        let baseDim = pow(1.0 - uniforms.backgroundDim, dimPower);
+        let dimmedR = r * baseDim;
+        let dimmedG = g * baseDim;
+        let dimmedB = b * baseDim;
+        // Apply smoothstep to mask for crisper edges
+        let edgeMask = smoothstep(0.2, 0.8, maskVal);
+        r = mix(dimmedR, r, edgeMask);
+        g = mix(dimmedG, g, edgeMask);
+        b = mix(dimmedB, b, edgeMask);
     }
 
     // 2. Apply directional lighting (before grayscale) - already uses smooth mask

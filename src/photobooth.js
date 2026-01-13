@@ -3,7 +3,7 @@
  * Creates portraits in the style of William "Dever" Timmons
  */
 
-import { pipeline, env } from '@huggingface/transformers'
+import { AutoModel, AutoProcessor, RawImage, env } from '@huggingface/transformers'
 
 import { setupInactivityTimer } from './inactivity.js'
 import { audioManager } from './audio-manager.js'
@@ -18,8 +18,9 @@ env.allowLocalModels = true
 env.allowRemoteModels = false
 env.localModelPath = '/models/'
 
-// Background removal pipeline
-let segmenter = null
+// Background removal model and processor
+let segmentModel = null
+let segmentProcessor = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
 import * as debug from './photobooth/debug.js'
@@ -171,7 +172,7 @@ async function initCamera() {
 }
 
 async function loadSegmentationModel() {
-    if (segmenter) return
+    if (segmentModel && segmentProcessor) return
 
     try {
         showCaptureProcessing('Loading filters...')
@@ -181,13 +182,17 @@ async function loadSegmentationModel() {
         console.log('env.allowRemoteModels:', env.allowRemoteModels)
         console.log('env.localModelPath:', env.localModelPath)
 
-        // Use RMBG-1.4 with standard image-segmentation pipeline
-        segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
+        // Load model and processor directly for soft mask output
+        segmentModel = await AutoModel.from_pretrained('briaai/RMBG-1.4', {
             device: 'webgpu',
-            progress_callback: (progress) => console.log('Progress:', progress),
+            progress_callback: (progress) => console.log('Model progress:', progress),
         })
 
-        console.log('RMBG-1.4 segmenter loaded successfully')
+        segmentProcessor = await AutoProcessor.from_pretrained('briaai/RMBG-1.4', {
+            progress_callback: (progress) => console.log('Processor progress:', progress),
+        })
+
+        console.log('RMBG-1.4 model and processor loaded successfully')
         hideCaptureProcessing()
     } catch (error) {
         console.error('Failed to load segmentation model:', error)
@@ -292,60 +297,104 @@ async function capturePhoto(preCapuredCanvas) {
     const height = canvas.height
     const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Run segmentation with RMBG-1.4
+    // Run segmentation with RMBG-1.4 using AutoModel for soft mask output
     let segMask = null
     try {
-        if (segmenter) {
+        if (segmentModel && segmentProcessor) {
             showCaptureProcessing('Detecting subject...')
             await yieldToMain()
 
-            // Convert canvas to data URL for pipeline input
+            // Convert canvas to RawImage
             const imageDataUrl = canvas.toDataURL('image/png')
+            const img = await RawImage.fromURL(imageDataUrl)
 
             showCaptureProcessing('Running RMBG-1.4...')
             await yieldToMain()
 
-            // Run the image-segmentation pipeline - returns array of {label, score, mask}
-            const results = await segmenter(imageDataUrl)
+            // Pre-process image with processor
+            const { pixel_values } = await segmentProcessor(img)
+
+            // Run model to get raw output (soft mask values)
+            const { output } = await segmentModel({ input: pixel_values })
 
             showCaptureProcessing('Processing mask...')
             await yieldToMain()
 
-            // RMBG-1.4 returns array with mask as RawImage
-            if (results && results.length > 0 && results[0].mask) {
-                const mask = results[0].mask
-                const maskWidth = mask.width
-                const maskHeight = mask.height
-                const channels = mask.channels || 1
+            // Get raw output tensor
+            const maskTensor = output[0]
+            const rawData = maskTensor.data
+            const maskWidth = maskTensor.dims[3] || maskTensor.dims[2]
+            const maskHeight = maskTensor.dims[2] || maskTensor.dims[1]
 
-                // Resize mask to original image dimensions
-                const resizedMask = new Float32Array(width * height)
-                const scaleX = maskWidth / width
-                const scaleY = maskHeight / height
+            // Debug: check raw value range (might be logits needing sigmoid)
+            let rawMin = Infinity, rawMax = -Infinity
+            for (let i = 0; i < rawData.length; i++) {
+                rawMin = Math.min(rawMin, rawData[i])
+                rawMax = Math.max(rawMax, rawData[i])
+            }
+            console.log(`Raw output range: ${rawMin.toFixed(3)} - ${rawMax.toFixed(3)}`)
 
-                for (let y = 0; y < height; y++) {
-                    for (let x = 0; x < width; x++) {
-                        const srcX = Math.floor(x * scaleX)
-                        const srcY = Math.floor(y * scaleY)
-                        const srcIdx = (srcY * maskWidth + srcX) * channels
-                        // Normalize to 0-1 range (mask values are 0-255)
-                        resizedMask[y * width + x] = mask.data[srcIdx] / 255
-                    }
+            // If values are outside 0-1, apply sigmoid to convert logits to probabilities
+            let maskData
+            if (rawMin < -0.1 || rawMax > 1.1) {
+                console.log('Applying sigmoid to convert logits to probabilities')
+                maskData = new Float32Array(rawData.length)
+                for (let i = 0; i < rawData.length; i++) {
+                    maskData[i] = 1 / (1 + Math.exp(-rawData[i]))
                 }
+            } else {
+                maskData = rawData
+            }
 
-                // Check if any subject was detected
-                let subjectPixels = 0
-                for (let i = 0; i < resizedMask.length; i++) {
-                    if (resizedMask[i] > 0.5) subjectPixels++
-                }
-                const subjectRatio = subjectPixels / resizedMask.length
+            // Check soft value distribution
+            let minVal = 1, maxVal = 0, softCount = 0
+            for (let i = 0; i < maskData.length; i++) {
+                minVal = Math.min(minVal, maskData[i])
+                maxVal = Math.max(maxVal, maskData[i])
+                if (maskData[i] > 0.05 && maskData[i] < 0.95) softCount++
+            }
+            console.log(`Processed mask range: ${minVal.toFixed(3)} - ${maxVal.toFixed(3)}, soft pixels: ${softCount} (${(softCount/maskData.length*100).toFixed(1)}%)`)
 
-                if (subjectRatio > 0.01) {
-                    segMask = createSoftMaskFromConfidence(resizedMask, width, height)
-                    console.log(`RMBG-1.4: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
-                } else {
-                    console.log('No subject detected, skipping background effects')
+            // Resize mask with bilinear interpolation
+            const resizedMask = new Float32Array(width * height)
+            const scaleX = maskWidth / width
+            const scaleY = maskHeight / height
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    // Bilinear interpolation
+                    const srcX = x * scaleX
+                    const srcY = y * scaleY
+                    const x0 = Math.floor(srcX)
+                    const y0 = Math.floor(srcY)
+                    const x1 = Math.min(x0 + 1, maskWidth - 1)
+                    const y1 = Math.min(y0 + 1, maskHeight - 1)
+                    const xFrac = srcX - x0
+                    const yFrac = srcY - y0
+
+                    const v00 = maskData[y0 * maskWidth + x0]
+                    const v10 = maskData[y0 * maskWidth + x1]
+                    const v01 = maskData[y1 * maskWidth + x0]
+                    const v11 = maskData[y1 * maskWidth + x1]
+
+                    const v0 = v00 * (1 - xFrac) + v10 * xFrac
+                    const v1 = v01 * (1 - xFrac) + v11 * xFrac
+                    resizedMask[y * width + x] = v0 * (1 - yFrac) + v1 * yFrac
                 }
+            }
+
+            // Check if any subject was detected
+            let subjectPixels = 0
+            for (let i = 0; i < resizedMask.length; i++) {
+                if (resizedMask[i] > 0.5) subjectPixels++
+            }
+            const subjectRatio = subjectPixels / resizedMask.length
+
+            if (subjectRatio > 0.01) {
+                segMask = createSoftMaskFromConfidence(resizedMask, width, height)
+                console.log(`RMBG-1.4: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
+            } else {
+                console.log('No subject detected, skipping background effects')
             }
         }
     } catch (error) {

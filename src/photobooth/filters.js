@@ -32,14 +32,19 @@ export function applyTimmonsFilters(imageData, mask = null) {
 
         // Handle background dimming with smooth blending
         if (mask && filterSettings.backgroundDim > 0) {
-            const dimFactor = 1 - filterSettings.backgroundDim
-            const dimmedR = r * dimFactor
-            const dimmedG = g * dimFactor
-            const dimmedB = b * dimFactor
-            // Smooth blend: maskValue 0 = full dim, maskValue 1 = no dim
-            r = lerp(dimmedR, r, maskValue)
-            g = lerp(dimmedG, g, maskValue)
-            b = lerp(dimmedB, b, maskValue)
+            // Non-linear dimming: push background to black more aggressively
+            // At dim=1.0, background goes to pure black
+            // Use power curve for more natural falloff
+            const dimPower = 1 + filterSettings.backgroundDim * 2 // 1-3 range
+            const dimmedR = r * Math.pow(1 - filterSettings.backgroundDim, dimPower)
+            const dimmedG = g * Math.pow(1 - filterSettings.backgroundDim, dimPower)
+            const dimmedB = b * Math.pow(1 - filterSettings.backgroundDim, dimPower)
+            // Smooth blend using mask: 0 = full dim (background), 1 = no dim (subject)
+            // Apply slight S-curve to mask for crisper edges
+            const edgeMask = smoothstep(0.2, 0.8, maskValue)
+            r = lerp(dimmedR, r, edgeMask)
+            g = lerp(dimmedG, g, edgeMask)
+            b = lerp(dimmedB, b, edgeMask)
         }
 
         // 1. Convert to grayscale using luminance formula
@@ -85,6 +90,12 @@ export function applyTimmonsFilters(imageData, mask = null) {
 // Linear interpolation helper
 function lerp(a, b, t) {
     return a + (b - a) * t
+}
+
+// Smoothstep for natural edge transitions
+function smoothstep(edge0, edge1, x) {
+    const t = clamp((x - edge0) / (edge1 - edge0), 0, 1)
+    return t * t * (3 - 2 * t)
 }
 
 function applyContrast(value, contrast) {
