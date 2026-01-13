@@ -13,14 +13,13 @@ import * as state from './photobooth/state.js'
 import { applyTimmonsFilters } from './photobooth/filters.js'
 import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.js'
 
-// Configure Transformers.js - use local models only
-env.allowLocalModels = true
-env.allowRemoteModels = false
-env.localModelPath = '/models/'
+// Configure Transformers.js - download models from Hugging Face CDN
+env.allowLocalModels = false
+env.allowRemoteModels = true
 
-// Background removal model and processor
-let segmentModel = null
-let segmentProcessor = null
+// MODNet model and processor for background removal
+let model = null
+let processor = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
 import * as debug from './photobooth/debug.js'
@@ -172,27 +171,21 @@ async function initCamera() {
 }
 
 async function loadSegmentationModel() {
-    if (segmentModel && segmentProcessor) return
+    if (model && processor) return
 
     try {
         showCaptureProcessing('Loading filters...')
 
-        console.log('Loading RMBG-1.4 model...')
-        console.log('env.allowLocalModels:', env.allowLocalModels)
-        console.log('env.allowRemoteModels:', env.allowRemoteModels)
-        console.log('env.localModelPath:', env.localModelPath)
-
-        // Load model and processor directly for soft mask output
-        segmentModel = await AutoModel.from_pretrained('briaai/RMBG-1.4', {
+        // Use MODNet for portrait matting (properly configured for transformers.js)
+        model = await AutoModel.from_pretrained('Xenova/modnet', {
+            dtype: 'fp32',
             device: 'webgpu',
-            progress_callback: (progress) => console.log('Model progress:', progress),
+            progress_callback: (info) => console.log('Model progress:', info),
         })
 
-        segmentProcessor = await AutoProcessor.from_pretrained('briaai/RMBG-1.4', {
-            progress_callback: (progress) => console.log('Processor progress:', progress),
-        })
+        processor = await AutoProcessor.from_pretrained('Xenova/modnet')
 
-        console.log('RMBG-1.4 model and processor loaded successfully')
+        console.log('MODNet segmenter loaded successfully')
         hideCaptureProcessing()
     } catch (error) {
         console.error('Failed to load segmentation model:', error)
@@ -297,63 +290,33 @@ async function capturePhoto(preCapuredCanvas) {
     const height = canvas.height
     const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Run segmentation with RMBG-1.4 using AutoModel for soft mask output
+    // Run segmentation with MODNet
     let segMask = null
     try {
-        if (segmentModel && segmentProcessor) {
+        if (model && processor) {
             showCaptureProcessing('Detecting subject...')
             await yieldToMain()
 
             // Convert canvas to RawImage
             const imageDataUrl = canvas.toDataURL('image/png')
-            const img = await RawImage.fromURL(imageDataUrl)
+            const image = await RawImage.fromURL(imageDataUrl)
 
-            showCaptureProcessing('Running RMBG-1.4...')
+            showCaptureProcessing('Running MODNet...')
             await yieldToMain()
 
-            // Pre-process image with processor
-            const { pixel_values } = await segmentProcessor(img)
+            // Pre-process image
+            const { pixel_values } = await processor(image)
 
-            // Run model to get raw output (soft mask values)
-            const { output } = await segmentModel({ input: pixel_values })
+            // Predict alpha matte
+            const { output } = await model({ input: pixel_values })
 
             showCaptureProcessing('Processing mask...')
             await yieldToMain()
 
-            // Get raw output tensor
-            const maskTensor = output[0]
-            const rawData = maskTensor.data
-            const maskWidth = maskTensor.dims[3] || maskTensor.dims[2]
-            const maskHeight = maskTensor.dims[2] || maskTensor.dims[1]
-
-            // Debug: check raw value range (might be logits needing sigmoid)
-            let rawMin = Infinity, rawMax = -Infinity
-            for (let i = 0; i < rawData.length; i++) {
-                rawMin = Math.min(rawMin, rawData[i])
-                rawMax = Math.max(rawMax, rawData[i])
-            }
-            console.log(`Raw output range: ${rawMin.toFixed(3)} - ${rawMax.toFixed(3)}`)
-
-            // If values are outside 0-1, apply sigmoid to convert logits to probabilities
-            let maskData
-            if (rawMin < -0.1 || rawMax > 1.1) {
-                console.log('Applying sigmoid to convert logits to probabilities')
-                maskData = new Float32Array(rawData.length)
-                for (let i = 0; i < rawData.length; i++) {
-                    maskData[i] = 1 / (1 + Math.exp(-rawData[i]))
-                }
-            } else {
-                maskData = rawData
-            }
-
-            // Check soft value distribution
-            let minVal = 1, maxVal = 0, softCount = 0
-            for (let i = 0; i < maskData.length; i++) {
-                minVal = Math.min(minVal, maskData[i])
-                maxVal = Math.max(maxVal, maskData[i])
-                if (maskData[i] > 0.05 && maskData[i] < 0.95) softCount++
-            }
-            console.log(`Processed mask range: ${minVal.toFixed(3)} - ${maxVal.toFixed(3)}, soft pixels: ${softCount} (${(softCount/maskData.length*100).toFixed(1)}%)`)
+            // MODNet outputs alpha values 0-1 directly
+            const outputData = output.data
+            const maskHeight = output.dims[2]
+            const maskWidth = output.dims[3]
 
             // Resize mask with bilinear interpolation
             const resizedMask = new Float32Array(width * height)
@@ -362,7 +325,6 @@ async function capturePhoto(preCapuredCanvas) {
 
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
-                    // Bilinear interpolation
                     const srcX = x * scaleX
                     const srcY = y * scaleY
                     const x0 = Math.floor(srcX)
@@ -372,10 +334,10 @@ async function capturePhoto(preCapuredCanvas) {
                     const xFrac = srcX - x0
                     const yFrac = srcY - y0
 
-                    const v00 = maskData[y0 * maskWidth + x0]
-                    const v10 = maskData[y0 * maskWidth + x1]
-                    const v01 = maskData[y1 * maskWidth + x0]
-                    const v11 = maskData[y1 * maskWidth + x1]
+                    const v00 = outputData[y0 * maskWidth + x0]
+                    const v10 = outputData[y0 * maskWidth + x1]
+                    const v01 = outputData[y1 * maskWidth + x0]
+                    const v11 = outputData[y1 * maskWidth + x1]
 
                     const v0 = v00 * (1 - xFrac) + v10 * xFrac
                     const v1 = v01 * (1 - xFrac) + v11 * xFrac
@@ -390,15 +352,15 @@ async function capturePhoto(preCapuredCanvas) {
             }
             const subjectRatio = subjectPixels / resizedMask.length
 
-            if (subjectRatio > 0.01) {
+            if (subjectRatio > 0.01 && subjectRatio < 0.99) {
                 segMask = createSoftMaskFromConfidence(resizedMask, width, height)
-                console.log(`RMBG-1.4: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
+                console.log(`MODNet: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
             } else {
-                console.log('No subject detected, skipping background effects')
+                console.log('No clear subject detected, skipping background effects')
             }
         }
     } catch (error) {
-        console.error('RMBG-1.4 segmentation failed:', error)
+        console.error('MODNet segmentation failed:', error)
     }
     state.setSegmentationMask(segMask)
 
