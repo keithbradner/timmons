@@ -13,9 +13,10 @@ import * as state from './photobooth/state.js'
 import { applyTimmonsFilters } from './photobooth/filters.js'
 import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.js'
 
-// Configure Transformers.js - download models from Hugging Face (public models don't need auth)
-env.allowLocalModels = false
-env.allowRemoteModels = true
+// Configure Transformers.js - use local models (RMBG-1.4 ONNX files in /models/)
+env.allowLocalModels = true
+env.allowRemoteModels = false
+env.localModelPath = '/models/'
 
 // RMBG segmenter pipeline
 let segmenter = null

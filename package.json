@@ -7,6 +7,7 @@
     "dev": "node server.js",
     "dev:vite": "vite",
     "build": "vite build",
+    "postinstall": "node scripts/download-model.js",
     "preview": "vite preview",
     "start": "node server.js",
     "test": "vitest run",
