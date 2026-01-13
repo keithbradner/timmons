@@ -7,7 +7,8 @@ import express from 'express'
 import { createServer as createViteServer } from 'vite'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs'
+import { writeFileSync, readFileSync, existsSync, mkdirSync, statSync, createWriteStream } from 'fs'
+import https from 'https'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -15,6 +16,96 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3000
 const isDev = process.env.NODE_ENV !== 'production'
+
+// ==========================================
+// RMBG-1.4 MODEL ON-DEMAND DOWNLOAD
+// ==========================================
+
+const MODEL_DIR = join(__dirname, isDev ? 'public' : 'dist', 'models', 'briaai', 'RMBG-1.4')
+const ONNX_PATH = join(MODEL_DIR, 'onnx', 'model.onnx')
+const MODEL_URL = 'https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx'
+const MIN_MODEL_SIZE = 100000000 // 100MB - real model is ~176MB
+
+let modelDownloadPromise = null
+
+function isModelValid() {
+    if (!existsSync(ONNX_PATH)) return false
+    try {
+        const stats = statSync(ONNX_PATH)
+        return stats.size > MIN_MODEL_SIZE
+    } catch {
+        return false
+    }
+}
+
+async function downloadModel() {
+    // If already downloading, wait for that
+    if (modelDownloadPromise) return modelDownloadPromise
+
+    if (isModelValid()) return Promise.resolve()
+
+    console.log('Downloading RMBG-1.4 model from Hugging Face...')
+    mkdirSync(join(MODEL_DIR, 'onnx'), { recursive: true })
+
+    modelDownloadPromise = new Promise((resolve, reject) => {
+        const makeRequest = (url) => {
+            https.get(url, (response) => {
+                if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+                    makeRequest(response.headers.location)
+                    return
+                }
+
+                if (response.statusCode !== 200) {
+                    reject(new Error(`HTTP ${response.statusCode}`))
+                    return
+                }
+
+                const totalSize = parseInt(response.headers['content-length'], 10)
+                let downloaded = 0
+                const file = createWriteStream(ONNX_PATH)
+
+                response.on('data', (chunk) => {
+                    downloaded += chunk.length
+                    const pct = ((downloaded / totalSize) * 100).toFixed(1)
+                    process.stdout.write(`\rDownloading RMBG-1.4: ${pct}%`)
+                })
+
+                response.pipe(file)
+
+                file.on('finish', () => {
+                    file.close()
+                    console.log('\nRMBG-1.4 model download complete!')
+                    modelDownloadPromise = null
+                    resolve()
+                })
+
+                file.on('error', (err) => {
+                    modelDownloadPromise = null
+                    reject(err)
+                })
+            }).on('error', (err) => {
+                modelDownloadPromise = null
+                reject(err)
+            })
+        }
+        makeRequest(MODEL_URL)
+    })
+
+    return modelDownloadPromise
+}
+
+// Intercept model.onnx requests - download if needed, then serve
+app.get('/models/briaai/RMBG-1.4/onnx/model.onnx', async (req, res) => {
+    try {
+        if (!isModelValid()) {
+            await downloadModel()
+        }
+        res.sendFile(ONNX_PATH)
+    } catch (error) {
+        console.error('Failed to serve model:', error)
+        res.status(500).json({ error: 'Failed to download model' })
+    }
+})
 
 // Print queue storage
 const QUEUE_FILE = join(__dirname, 'data', 'print-queue.json')
@@ -199,14 +290,6 @@ async function startServer() {
 
         console.log('Vite dev server integrated')
     } else {
-        // Disable caching for model files to ensure fresh configs
-        app.use('/models', (req, res, next) => {
-            res.set('Cache-Control', 'no-store, no-cache, must-revalidate')
-            res.set('Pragma', 'no-cache')
-            res.set('Expires', '0')
-            next()
-        })
-
         // In production, serve built files
         app.use(express.static(join(__dirname, 'dist')))
 

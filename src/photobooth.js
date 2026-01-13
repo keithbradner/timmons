@@ -16,9 +16,9 @@ import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.
 // Configure Transformers.js - use local models only
 env.allowLocalModels = true
 env.allowRemoteModels = false
-env.localModelPath = '/'
+env.localModelPath = '/models/'
 
-// RMBG segmenter pipeline
+// Background removal pipeline
 let segmenter = null
 import { applyDirectionalLighting } from './photobooth/lighting.js'
 import { cropToSubject as doCropToSubject, cropImageData } from './photobooth/crop.js'
@@ -176,12 +176,15 @@ async function loadSegmentationModel() {
     try {
         showCaptureProcessing('Loading filters...')
 
-        // Use RMBG-1.4 with image-segmentation pipeline (proven working)
-        // RMBG-2.0 has known issues: https://github.com/huggingface/transformers.js/issues/1107
-        // Load from local path to avoid HF Hub API returning wrong model_type
-        segmenter = await pipeline('image-segmentation', '/models/briaai/RMBG-1.4', {
-            device: 'webgpu',  // Fast on M-series Macs
-            local_files_only: true,
+        console.log('Loading RMBG-1.4 model...')
+        console.log('env.allowLocalModels:', env.allowLocalModels)
+        console.log('env.allowRemoteModels:', env.allowRemoteModels)
+        console.log('env.localModelPath:', env.localModelPath)
+
+        // Use RMBG-1.4 with standard image-segmentation pipeline
+        segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
+            device: 'webgpu',
+            progress_callback: (progress) => console.log('Progress:', progress),
         })
 
         console.log('RMBG-1.4 segmenter loaded successfully')
@@ -289,7 +292,7 @@ async function capturePhoto(preCapuredCanvas) {
     const height = canvas.height
     const originalImage = ctx.getImageData(0, 0, width, height)
 
-    // Run segmentation with BiRefNet (RMBG-2.0)
+    // Run segmentation with RMBG-1.4
     let segMask = null
     try {
         if (segmenter) {
@@ -299,62 +302,54 @@ async function capturePhoto(preCapuredCanvas) {
             // Convert canvas to data URL for pipeline input
             const imageDataUrl = canvas.toDataURL('image/png')
 
-            showCaptureProcessing('Running BiRefNet...')
+            showCaptureProcessing('Running RMBG-1.4...')
             await yieldToMain()
 
-            // Run the segmentation pipeline
+            // Run the image-segmentation pipeline - returns array of {label, score, mask}
             const results = await segmenter(imageDataUrl)
 
             showCaptureProcessing('Processing mask...')
             await yieldToMain()
 
-            // Pipeline returns array of segments, get the mask
-            // For background removal, we typically get one result with the foreground mask
-            if (results && results.length > 0) {
-                const result = results[0]
+            // RMBG-1.4 returns array with mask as RawImage
+            if (results && results.length > 0 && results[0].mask) {
+                const mask = results[0].mask
+                const maskWidth = mask.width
+                const maskHeight = mask.height
+                const channels = mask.channels || 1
 
-                // The mask might be in result.mask (RawImage) or we need to extract it
-                if (result.mask) {
-                    const maskImage = result.mask
-                    const maskData = maskImage.data
+                // Resize mask to original image dimensions
+                const resizedMask = new Float32Array(width * height)
+                const scaleX = maskWidth / width
+                const scaleY = maskHeight / height
 
-                    // Resize mask to original image dimensions
-                    const resizedMask = new Float32Array(width * height)
-                    const maskWidth = maskImage.width
-                    const maskHeight = maskImage.height
-                    const scaleX = maskWidth / width
-                    const scaleY = maskHeight / height
-
-                    for (let y = 0; y < height; y++) {
-                        for (let x = 0; x < width; x++) {
-                            const srcX = Math.floor(x * scaleX)
-                            const srcY = Math.floor(y * scaleY)
-                            const srcIdx = (srcY * maskWidth + srcX) * maskImage.channels
-                            // Normalize to 0-1 range
-                            resizedMask[y * width + x] = maskData[srcIdx] / 255
-                        }
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcX = Math.floor(x * scaleX)
+                        const srcY = Math.floor(y * scaleY)
+                        const srcIdx = (srcY * maskWidth + srcX) * channels
+                        // Normalize to 0-1 range (mask values are 0-255)
+                        resizedMask[y * width + x] = mask.data[srcIdx] / 255
                     }
+                }
 
-                    // Check if any subject was detected
-                    let subjectPixels = 0
-                    for (let i = 0; i < resizedMask.length; i++) {
-                        if (resizedMask[i] > 0.5) subjectPixels++
-                    }
-                    const subjectRatio = subjectPixels / resizedMask.length
+                // Check if any subject was detected
+                let subjectPixels = 0
+                for (let i = 0; i < resizedMask.length; i++) {
+                    if (resizedMask[i] > 0.5) subjectPixels++
+                }
+                const subjectRatio = subjectPixels / resizedMask.length
 
-                    if (subjectRatio > 0.01) {
-                        segMask = createSoftMaskFromConfidence(resizedMask, width, height)
-                        console.log(`BiRefNet: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
-                    } else {
-                        console.log('No subject detected, skipping background effects')
-                    }
+                if (subjectRatio > 0.01) {
+                    segMask = createSoftMaskFromConfidence(resizedMask, width, height)
+                    console.log(`RMBG-1.4: Subject detected (${(subjectRatio * 100).toFixed(1)}% of frame)`)
                 } else {
-                    console.log('Pipeline result:', result)
+                    console.log('No subject detected, skipping background effects')
                 }
             }
         }
     } catch (error) {
-        console.error('BiRefNet segmentation failed:', error)
+        console.error('RMBG-1.4 segmentation failed:', error)
     }
     state.setSegmentationMask(segMask)
 
