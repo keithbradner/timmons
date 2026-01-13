@@ -32,15 +32,8 @@ else
     echo "✓ Downloaded $ONNX_FILE"
 fi
 
-# Download config files (small, always re-download to ensure fresh)
-echo "Downloading config files..."
-curl -sL -o "$MODEL_DIR/config.json" \
-    "https://huggingface.co/briaai/RMBG-1.4/resolve/main/config.json"
-echo "✓ config.json"
-
-curl -sL -o "$MODEL_DIR/preprocessor_config.json" \
-    "https://huggingface.co/briaai/RMBG-1.4/resolve/main/preprocessor_config.json"
-echo "✓ preprocessor_config.json"
+# Config files are committed to git (with transformers.js compatible settings)
+# Only the ONNX model needs to be downloaded (too large for git)
 
 echo ""
 echo "Model download complete!"
