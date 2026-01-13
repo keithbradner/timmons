@@ -178,8 +178,10 @@ async function loadSegmentationModel() {
 
         // Use RMBG-1.4 with image-segmentation pipeline (proven working)
         // RMBG-2.0 has known issues: https://github.com/huggingface/transformers.js/issues/1107
-        segmenter = await pipeline('image-segmentation', 'briaai/RMBG-1.4', {
+        // Load from local path to avoid HF Hub API returning wrong model_type
+        segmenter = await pipeline('image-segmentation', '/models/briaai/RMBG-1.4', {
             device: 'webgpu',  // Fast on M-series Macs
+            local_files_only: true,
         })
 
         console.log('RMBG-1.4 segmenter loaded successfully')

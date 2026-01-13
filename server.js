@@ -199,6 +199,14 @@ async function startServer() {
 
         console.log('Vite dev server integrated')
     } else {
+        // Disable caching for model files to ensure fresh configs
+        app.use('/models', (req, res, next) => {
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+            res.set('Pragma', 'no-cache')
+            res.set('Expires', '0')
+            next()
+        })
+
         // In production, serve built files
         app.use(express.static(join(__dirname, 'dist')))
 
