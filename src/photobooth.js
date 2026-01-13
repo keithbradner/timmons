@@ -301,7 +301,7 @@ async function capturePhoto(preCapuredCanvas) {
             const imageDataUrl = canvas.toDataURL('image/png')
             const image = await RawImage.fromURL(imageDataUrl)
 
-            showCaptureProcessing('Running MODNet...')
+            showCaptureProcessing('Analyzing framing...')
             await yieldToMain()
 
             // Pre-process image
@@ -314,9 +314,13 @@ async function capturePhoto(preCapuredCanvas) {
             await yieldToMain()
 
             // MODNet outputs alpha values 0-1 directly
-            const outputData = output.data
-            const maskHeight = output.dims[2]
-            const maskWidth = output.dims[3]
+            // output is array of tensors, first one is the mask
+            const maskTensor = output[0]
+            const outputData = maskTensor.data
+            const maskHeight = maskTensor.dims[2] || maskTensor.dims[1]
+            const maskWidth = maskTensor.dims[3] || maskTensor.dims[2]
+
+            console.log('MODNet mask:', maskWidth, 'x', maskHeight, 'tensor dims:', maskTensor.dims)
 
             // Resize mask with bilinear interpolation
             const resizedMask = new Float32Array(width * height)
