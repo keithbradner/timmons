@@ -6,5 +6,13 @@
   ],
   "in_ch": 3,
   "out_ch": 1,
-  "torch_dtype": "float32"
+  "torch_dtype": "float32",
+  "onnx": {
+    "inputs": {
+      "pixel_values": "input"
+    },
+    "outputs": {
+      "logits": "output"
+    }
+  }
 }
