@@ -13,10 +13,10 @@ import * as state from './photobooth/state.js'
 import { applyTimmonsFilters } from './photobooth/filters.js'
 import { createSoftMask, createSoftMaskFromConfidence } from './photobooth/mask.js'
 
-// Configure Transformers.js - use local models (RMBG-1.4 ONNX files in /models/)
+// Configure Transformers.js - use local models only
 env.allowLocalModels = true
 env.allowRemoteModels = false
-env.localModelPath = '/models/'
+env.localModelPath = '/'
 
 // RMBG segmenter pipeline
 let segmenter = null
