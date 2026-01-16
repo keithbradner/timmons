@@ -317,8 +317,18 @@ async function capturePhoto(preCapuredCanvas) {
             // output is array of tensors, first one is the mask
             const maskTensor = output[0]
             const outputData = maskTensor.data
-            const maskHeight = maskTensor.dims[2] || maskTensor.dims[1]
-            const maskWidth = maskTensor.dims[3] || maskTensor.dims[2]
+
+            // Handle both 3D [batch, height, width] and 4D [batch, channels, height, width] formats
+            let maskHeight, maskWidth
+            if (maskTensor.dims.length === 4) {
+                // NCHW format
+                maskHeight = maskTensor.dims[2]
+                maskWidth = maskTensor.dims[3]
+            } else {
+                // NHW format (MODNet typically outputs this)
+                maskHeight = maskTensor.dims[1]
+                maskWidth = maskTensor.dims[2]
+            }
 
             console.log('MODNet mask:', maskWidth, 'x', maskHeight, 'tensor dims:', maskTensor.dims)
 

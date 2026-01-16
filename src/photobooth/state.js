@@ -101,8 +101,8 @@ export const presetValues = {
 
 // Effect values for each level: [off, medium, high, max]
 export const effectValues = {
-    silhouette: { backgroundDim: [0, 0.6, 1.0, 1.0] },  // 0=none, 0.85=dark, 1.0=black
-    lighting: { lightBoost: [0, 0.5, 0.85, 1.2] },  // lighting intensity - more pronounced
+    silhouette: { backgroundDim: [0, 0.55, 1.0, 1.0] },  // 0=none, 0.55=dark, 1.0=black
+    lighting: { lightBoost: [0, 0.85, 1.2, 1.6] },  // lighting intensity - stronger
     highcontrast: { contrast: [1.0, 1.3, 1.6, 2.2] },
     crushedblacks: { shadows: [0, 8, 18, 35] },
     grain: { grain: [0, 6, 12, 22] },

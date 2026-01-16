@@ -10,6 +10,13 @@ import * as state from './state.js'
  * Creates a tight portrait crop focused on head and shoulders
  */
 export async function cropToSubject(applySettingsCallback, updatePreviewCallback) {
+    console.log('cropToSubject called:', {
+        hasMask: !!state.segmentationMask,
+        hasImage: !!state.imageOriginal,
+        maskLength: state.segmentationMask?.length,
+        imageSize: state.imageOriginal ? `${state.imageOriginal.width}x${state.imageOriginal.height}` : null
+    })
+
     if (!state.segmentationMask || !state.imageOriginal) {
         console.warn('No segmentation data available for cropping')
         return
@@ -45,9 +52,11 @@ export async function cropToSubject(applySettingsCallback, updatePreviewCallback
     }
 
     if (minX >= maxX) {
-        console.warn('No subject detected')
+        console.warn('No subject detected in mask - bounds:', { minX, maxX, minY, maxY })
         return
     }
+
+    console.log('Subject detected:', { minX, maxX, minY, maxY, subjectWidth: maxX - minX, subjectHeight: maxY - minY })
 
     const subjectWidth = maxX - minX
     const subjectHeight = maxY - minY

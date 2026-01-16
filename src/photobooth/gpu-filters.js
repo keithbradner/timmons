@@ -295,12 +295,12 @@ fn calcLighting(x: f32, y: f32, width: f32, height: f32, maskVal: f32, boost: f3
     let normX = x / width;
     let normY = y / height;
 
-    // Key light position: upper-right, classic portrait position
-    let keyLightX: f32 = 0.85;
+    // Key light position: upper-left, classic portrait position
+    let keyLightX: f32 = 0.15;
     let keyLightY: f32 = 0.1;
 
-    // Fill light position: left side, lower
-    let fillLightX: f32 = 0.15;
+    // Fill light position: right side, lower
+    let fillLightX: f32 = 0.85;
     let fillLightY: f32 = 0.4;
 
     // Distance from key light (creates falloff)
@@ -313,7 +313,8 @@ fn calcLighting(x: f32, y: f32, width: f32, height: f32, maskVal: f32, boost: f3
     let keyIntensity = 1.0 / (1.0 + keyDist * 2.5);
 
     // Directional component - face the light to be brighter
-    let keyDirection = max(0.0, toKeyX * 0.7 + toKeyY * 0.3);
+    // Negate toKeyX since light is on the left (pixels to the right are in shadow)
+    let keyDirection = max(0.0, -toKeyX * 0.7 + toKeyY * 0.3);
 
     // Combined key light contribution
     let keyLight = (keyIntensity * 0.6 + keyDirection * 0.4);
@@ -330,14 +331,14 @@ fn calcLighting(x: f32, y: f32, width: f32, height: f32, maskVal: f32, boost: f3
     let rimLight = edgeFactor * 0.4;
 
     // Combine lights - key is dominant, fill softens shadows, rim adds pop
-    let totalLight = keyLight * 1.4 + fillLight + rimLight;
+    let totalLight = keyLight * 1.6 + fillLight + rimLight;
 
     // Create more dramatic range: dark shadows to bright highlights
-    // Range: ~0.4 (deep shadow) to ~1.5 (bright highlight)
-    let adjusted = 0.4 + totalLight * 1.1;
+    // Range: ~0.3 (deep shadow) to ~1.6 (bright highlight)
+    let adjusted = 0.3 + totalLight * 1.3;
 
     // Apply boost intensity
-    let lightEffect = mix(1.0, adjusted, boost * 1.3);
+    let lightEffect = mix(1.0, adjusted, boost * 1.5);
 
     // Only apply to subject (smooth blend at edges)
     return mix(1.0, lightEffect, maskVal);
